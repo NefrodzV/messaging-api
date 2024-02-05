@@ -1,0 +1,132 @@
+import { MongoMemoryServer } from "mongodb-memory-server";
+import mongoose from "mongoose";
+import express from  'express';
+import { SessionRouter } from '../../routes/index.js'
+import request from 'supertest'
+import { beforeAll, afterAll, describe, it } from '@jest/globals'
+
+
+const app = express()
+app.use(express.urlencoded({ extended: false }))
+app.use(express.json())
+app.use('/api/session', SessionRouter)
+
+describe('Test session route', () => {
+    let conn;
+    let mongoServer;
+
+    beforeAll(async () => {
+        mongoServer = await MongoMemoryServer.create()
+        await mongoose.connect(mongoServer.getUri())
+        conn = mongoose.connection
+    })
+
+    afterAll(async () => {
+        if(conn) {
+            conn.close()
+        }
+        if(mongoServer) {
+            mongoServer.stop()
+        }
+    })
+    
+    it('Registers user successfully', done => {
+        request(app)
+            .post('/api/session/register')
+            .type('form')
+            .send({
+                username: "My user",
+                email: "myuser123@gmail.com",
+                password:"123456789",
+                confirmPassword: "123456789"
+            })
+            // .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect({ msg: 'Account created successfully' })
+            .expect(201, done)
+    })
+
+    it('Sends errors when fields are incorrect', done => {
+        request(app)
+            .post('/api/session/register')
+            .type('form')
+            .send({
+                username: "",
+                email: "",
+                password:"",
+                confirmPassword: ""
+            })
+            .expect('Content-Type', /json/)
+            .expect({
+                errors: {
+                    username: 'Username cannot be empty',
+                    email: 'Email must be between 3 - 256 characters',
+                    password: 'Password must be at least 8 characters',
+                    confirmPassword: 'Password confirmation cannot be empty'
+                }
+            })
+            .expect(422, done)
+    })
+
+    it('Send error when password and confirmation arent the same',
+    done => {
+        request(app)
+            .post('/api/session/register')
+            .type('form')
+            .send({
+                username: "My user",
+                email: "user1234@gmail.com",
+                password:"123456789",
+                confirmPassword: "12345678"
+            })
+            .expect('Content-Type', /json/)
+            .expect({
+                errors: { 
+                    confirmPassword: 'Confirm password not equal password' 
+                }
+            })
+            .expect(422, done)
+    })
+
+    it('Replies with email already', done => {
+        request(app)
+            .post('/api/session/register')
+            .type('form')
+            .send({
+                username: "My user",
+                email: "user1234@gmail.com",
+                password:"123456789",
+                confirmPassword: "123456789"
+            }).then(response => {
+                request(app)
+                .post('/api/session/register')
+                .type('form')
+                .send({
+                    username: "My user",
+                    email: "user1234@gmail.com",
+                    password:"123456789",
+                    confirmPassword: "123456789"
+                })
+                .expect({ msg: 'E-mail already in use' })
+                .expect(409, done)
+            })
+    })
+
+    it('Replies when error in database', done => {
+        conn.close()
+        mongoServer.stop()
+        request(app)
+            .post('/api/session/register')
+            .type('form')
+            .send({
+                username: "My user",
+                email: "user1234@gmail.com",
+                password:"123456789",
+                confirmPassword: "123456789"
+            })
+            .expect('Content-Type', /json/)
+            .expect({ msg: 'Something went wrong with the database' })
+            .expect(500, done)
+    })
+    
+})
