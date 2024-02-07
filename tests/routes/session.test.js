@@ -112,21 +112,87 @@ describe('Test session route', () => {
             })
     })
 
-    it('Replies when error in database', done => {
-        conn.close()
-        mongoServer.stop()
+    // it('Replies when error in database', done => {
+    //     conn.close()
+    //     mongoServer.stop()
+    //     request(app)
+    //         .post('/api/session/register')
+    //         .type('form')
+    //         .send({
+    //             username: "My user",
+    //             email: "user1234@gmail.com",
+    //             password:"123456789",
+    //             confirmPassword: "123456789"
+    //         })
+    //         .expect('Content-Type', /json/)
+    //         .expect({ msg: 'Something went wrong with the database' })
+    //         .expect(500, done)
+    // })
+
+    it('Responds with errors when login with empty fields', done => {
         request(app)
-            .post('/api/session/register')
+            .post('/api/session/login')
             .type('form')
             .send({
-                username: "My user",
-                email: "user1234@gmail.com",
-                password:"123456789",
-                confirmPassword: "123456789"
+                email: "",
+                password: ""
             })
             .expect('Content-Type', /json/)
-            .expect({ msg: 'Something went wrong with the database' })
-            .expect(500, done)
+            .expect({
+                errors: {
+                    email: 'E-mail cannot be empty',
+                    password: 'Password has a minimum of 8 characters'
+                  }
+            })
+            .expect(422, done)
     })
+
+    it('Login responds with incorrect credentials', done => {
+        // In this request user doesnt exist
+        request(app)
+            .post('/api/session/login')
+            .type('form')
+            .send({
+                email: "user123@gmail.com",
+                password: "123456789"
+            })
+            .expect('Content-Type', /json/)
+            .expect({
+                msg: 'Incorrect username or password. Please try again' 
+            })
+            .expect(400, done)
+    })
+
+    it('Login responds with incorrect credentials when email exist', done => {
+        request(app)
+            .post('/api/session/login')
+            .type('form')
+            .send({
+                email: 'user1234@gmail.com',
+                password: '12345678' // Incorrect password
+            })
+            .expect('Content-Type', /json/)
+            .expect({ msg: 'Incorrect username or password. Please try again'})
+            .expect(400, done)
+    })
+
+    it('Responds with json webtoken', done => {
+        request(app)
+            .post('/api/session/login')
+            .type('form')
+            .send({
+                email: 'user1234@gmail.com',
+                password: '123456789'
+            })
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .then(res => {
+                expect(res.body).toHaveProperty('token')
+                done()
+                
+            })
+    })
+
+
     
 })

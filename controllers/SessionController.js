@@ -1,7 +1,11 @@
 import { User } from '../models/index.js'
 import { validationResult, body } from 'express-validator'
+import Buffer from 'node:buffer'
 import bcrypt from 'bcryptjs'
 import mongoose from 'mongoose'
+import jwt from 'jsonwebtoken'
+import { configDotenv } from 'dotenv'
+configDotenv()
 
 function SessionController() {
 
@@ -77,9 +81,80 @@ function SessionController() {
         
     }]
 
-    const login = (req, res) => {
-        res.send('login user not implemeted')
-    }
+    const login = [
+        body('email', 'E-mail cannot be empty')
+            .trim()
+            .isLength({ min: 1 })
+            .isEmail()
+            .withMessage('Incorrect E-mail format')
+            .escape(),
+        body('password', "Password has a minimum of 8 characters")
+            .trim()
+            .isLength({ min: 8})
+            .escape(),
+        
+
+        async (req, res) => {
+            const result = validationResult(req)
+            if(!result.isEmpty()) {
+                const mappedResult = result.mapped()
+                const errors = {}
+                for(const key of Object.keys(mappedResult)) {
+                    errors[`${key}`] = mappedResult[`${key}`].msg
+                }
+                res.status(422).json({
+                    errors: errors
+                })
+                return
+            }
+
+            try {
+                const user = await User.findOne({ "profile.email": req.body.email })
+                // User doesnt exist in db
+                if(!user) {
+                    res.status(400).json({
+                        msg: "Incorrect username or password. Please try again"
+                    })
+                    return
+                }
+                const correctPassword = await bcrypt.compare(req.body.password, user.profile.password)
+                // Incorrect user password
+                if(!correctPassword) {
+                    res.status(400).json({
+                        msg: "Incorrect username or password. Please try again"
+                    })
+                    return
+                }
+
+                const payload = {
+                    id: user._id,
+                    username: user.profile.username
+                }
+                console.log(process.env.TOKEN_SECRET)
+                jwt.sign(
+                    payload, 
+                    process.env.TOKEN_SECRET,
+                    (err, token) => {
+                        if(err) {
+                            console.log(err)
+                            res.status(500).json({ 
+                                msg: 'Something went wrong with the server'
+                            })
+                            return
+                        }
+                        res.status(200).json({ token: token})
+                    }
+                )
+
+            } catch(e) {
+                res.status(500).json({
+                    msg: 'Uh Oh! Something went wrong'
+                })
+                console.log(e)
+            }
+            
+        }
+    ]
 
     
 
