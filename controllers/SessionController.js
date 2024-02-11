@@ -1,6 +1,5 @@
 import { User } from '../models/index.js'
 import { validationResult, body } from 'express-validator'
-import Buffer from 'node:buffer'
 import bcrypt from 'bcryptjs'
 import mongoose from 'mongoose'
 import jwt from 'jsonwebtoken'
