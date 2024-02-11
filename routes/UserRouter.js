@@ -3,37 +3,18 @@ import { userController } from "../controllers/index.js";
 
 const router = Router()
 
-// Gets all users in database except the logged in user
-router.get('/', (req, res) => {
-    res.status(200).json({ msg: "Getting users not implemented"})
-})
+// Me route is for user that began a session with token
+router.get('/me', userController.getUser)
 
-router.post('/', (req, res) => {
-    res.status(200).json({ 
-        msg: "success", 
-        username: req.body.username, 
-        password: req.body.password
-    })
-})
+router.get('/me/chats', userController.getChats)
 
-router.get('/:userId', userController.getUser)
+router.post('/me/chats', userController.createChat)
 
-router.get('/:userId/profile', (req, res) => {
-    res.send('Gets the user profile not implemented')
-})
+// Get a specific chat a user selects
+router.get('/me/chats/:chatId', userController.getChat)
 
-router.post('/:userId/profile', (req, res) => {
-    res.send('update the user profile not implemented')
-})
+router.get('/me/chats/:chatId/messages', userController.getMessages)
 
-router.get('/:userId/chats', userController.getChats)
-
-// Create a new chat with other user
-router.post('/userId/chats', userController.createChat)
-
-router.get('/:userId/chats/:chatId', userController.getChat)
-
-// Send a new message in chat
-router.post('/:userId/chats/:chatId', userController.createMessage)
+router.post('/me/chats/:chatId/messages', userController.createMessage)
 
 export default router
