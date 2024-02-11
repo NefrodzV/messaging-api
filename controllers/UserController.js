@@ -6,7 +6,6 @@ function UserController() {
     const getUser = [
         async function verifyToken(req, res, next) {
             const bearerHeader = req.headers['authorization']
-            console.log(bearerHeader)
             if(bearerHeader) {
                 const bearer = bearerHeader.split(' ')
                 const token = bearer[1]
@@ -56,10 +55,15 @@ function UserController() {
         res.send('Send a message in a specific chat not implemented')
     }
 
+    const getMessages = (req, res) => {
+        res.send('Get all messages in a chat not implemented')
+    }
+
     return {
         getUser,
         getChats,
         getChat,
+        getMessages,
         createChat,
         createMessage
     }
