@@ -1,7 +1,6 @@
 import { User } from '../models/index.js'
 import { validationResult, body } from 'express-validator'
 import bcrypt from 'bcryptjs'
-import mongoose from 'mongoose'
 import jwt from 'jsonwebtoken'
 import { configDotenv } from 'dotenv'
 configDotenv()
@@ -20,12 +19,14 @@ function SessionController() {
             .withMessage('Email must be between 3 - 256 characters')
             .isEmail()
             .withMessage('Incorrect E-mail format')
-            .escape(),
+            .escape()
+            .normalizeEmail(),
 
         body('password', 'Password must be at least 8 characters')
             .trim()
             .isLength({ min: 8 })
             .escape(),
+
         body('confirmPassword', 'Password confirmation cannot be empty')
             .trim()
             .isLength({ min: 1})
@@ -34,9 +35,9 @@ function SessionController() {
         body('confirmPassword', 'Confirm password not equal password')
             .custom((input, { req }) => {
                 return input === req.body.password
-            }),
+            }).escape(),
         
-        async (req, res) => {
+        async (req, res, next) => {
             const result = validationResult(req)
             if(!result.isEmpty()) {
                 const mappedResult = result.mapped()
@@ -66,16 +67,17 @@ function SessionController() {
                 res.status(201).json({ msg: "Account created successfully" })
 
             } catch(e) {
-                if(e instanceof mongoose.mongo.MongoServerError 
-                    && e.code === 11000) {
-                    res.status(409).json({
-                        msg: "E-mail already in use"
-                    })
-                    return
-                }
-                res.status(500).json({ 
-                    msg: "Something went wrong with the database"
-                })
+                next(e)
+                // if(e instanceof mongoose.mongo.MongoServerError 
+                //     && e.code === 11000) {
+                //     res.status(409).json({
+                //         msg: "E-mail already in use"
+                //     })
+                //     return
+                // }
+                // res.status(500).json({ 
+                //     msg: "Something went wrong with the database"
+                // })
             }
         
     }]
@@ -129,7 +131,7 @@ function SessionController() {
                     id: user._id,
                     username: user.profile.username
                 }
-                console.log(process.env.TOKEN_SECRET)
+
                 jwt.sign(
                     payload, 
                     process.env.TOKEN_SECRET,

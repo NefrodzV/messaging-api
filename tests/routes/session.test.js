@@ -11,6 +11,19 @@ app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 app.use('/api/session', SessionRouter)
 
+app.use((err, req, res, next) => {
+     if(err instanceof mongoose.mongo.MongoServerError 
+        && err.code === 11000) {
+        res.status(409).json({
+            msg: "E-mail already in use"
+        })
+        return
+    }
+    res.status(500).json({ 
+        msg: "Something went wrong with the database"
+    })
+})
+
 describe('Test session route', () => {
     let conn;
     let mongoServer;
