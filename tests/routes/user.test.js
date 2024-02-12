@@ -4,6 +4,9 @@ import request from 'supertest/index.js'
 import { afterAll, describe, beforeAll ,it , expect} from '@jest/globals'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import mongoose from 'mongoose'
+import jwt from 'jsonwebtoken'
+import { configDotenv } from 'dotenv'
+configDotenv()
 
 const app = express()
 app.use(express.urlencoded({ extended: false }))
@@ -131,7 +134,12 @@ describe('Test user route', () => {
         expect(getUsersRequest.body.users).not.toBeUndefined()
         // Checking each and that the session user is not in list
         getUsersRequest.body.users.forEach(user => {
-            expect(user.profile.email).not.toBe("user2@gmail.com")
+            // Getting the username from the token
+            const decode = jwt.verify(
+                loginRequest.body.token,
+                process.env.TOKEN_SECRET
+            )
+            expect(user.profile.username).not.toBe(decode.username)
         })
     })
 
@@ -144,6 +152,6 @@ describe('Test user route', () => {
             })
         
         expect(loginRequest.status).toBe(200)
-        
+        // expect(loginRequest.user.username)
     })
 })

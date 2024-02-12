@@ -94,10 +94,8 @@ function UserController() {
                     _id: { $ne: decode.id }
                 }, { 
                     "profile.username": 1,
-                    "profile.email": 1
                 })
-                console.log(users)
-
+                
                 res.status(200).json({ users: users })
             } catch(e) {
                 if(err instanceof JsonWebTokenError) {
