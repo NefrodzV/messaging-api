@@ -26,7 +26,8 @@ function UserController() {
                 return token
             })
             .isJWT()
-            .withMessage('Forbidden'),
+            .withMessage('Forbidden')
+            .escape(),
         async (req, res, next) => {
             // Processing the token data
             const result = validationResult(req)
@@ -85,13 +86,14 @@ function UserController() {
     // Should returns all users except the user in session
     const getUsers = [
         // Sanitizing and validating
-        header('authorization', 'Require authorization')
-            .notEmpty()
-            .exists({ values: 'undefined' })
-            .withMessage('authorization not defined')
-            .customSanitizer((input) => {
-                const headers = input.split(' ')
-                const token = headers[1]
+        header('authorization', 'Requires authorization')
+            .exists({ values: 'falsy' })
+            .bail()
+            .contains('Bearer ')
+            .withMessage('Authorization doesnt contain Bearer')
+            .customSanitizer(input => {
+                const authHeader = input.split(' ')
+                const token = authHeader[1]
                 return token
             })
             .isJWT()
