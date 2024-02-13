@@ -26,9 +26,7 @@ function UserController() {
                 return token
             })
             .isJWT()
-            .withMessage('Forbidden')
-        ,
- 
+            .withMessage('Forbidden'),
         async (req, res, next) => {
             // Processing the token data
             const result = validationResult(req)
@@ -52,7 +50,8 @@ function UserController() {
                     "profile.image": 1
                 }
                 )
-                res.status(200).json({user: {
+                res.status(200).json({
+                    user: {
                     username: user.profile.username,
                     image: user.profile.image
                 }})

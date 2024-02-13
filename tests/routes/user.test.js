@@ -41,11 +41,39 @@ describe('Test user route', () => {
     const api = request(app)
     let server;
     let conn;
+    let tokenMock;
 
     beforeAll(async () => {
         server = await MongoMemoryServer.create()
         await mongoose.connect(server.getUri())
         conn = mongoose.connection
+
+        // Creating some mocks in database and a token mock
+        await api.post('/api/session/register')
+        .type('form')
+        .send({
+            username: "User1",
+            email: 'user1@gmail.com',
+            password: '123456789',
+            confirmPassword: '123456789'
+        })
+
+        await api.post('/api/session/register')
+        .type('form')
+        .send({
+            username: "User2",
+            email: 'user2@gmail.com',
+            password: '123456789',
+            confirmPassword: '123456789'
+        })
+
+        const tokenRes = await api.post('/api/session/login')
+        .type('form')
+        .send({
+            email: 'user2@gmail.com',
+            password: '123456789',
+        })
+        tokenMock = tokenRes.body
     })
 
     afterAll(async () => {
@@ -57,6 +85,7 @@ describe('Test user route', () => {
             await server.stop()
         }
     })
+
 
     it('Error with undefined auth header', async() => {
         const res = await api.get('/api/users/me')
@@ -84,6 +113,19 @@ describe('Test user route', () => {
                 authorization: 'Forbidden'
             }
         })
+    })
+
+    
+    
+
+    it('Returns the user in session data', async() => {
+        expect(tokenMock).not.toBeUndefined()
+        const meRes = await api.get('/api/users/me')
+        .set('authorization', "Bearer " + tokenMock.token)
+        expect(meRes.status).toBe(200)
+        expect(meRes.body).not.toBeUndefined()
+        expect(meRes.body).toHaveProperty('user')
+        expect(meRes.body.user.username).toBe('User2')
     })
 
     /**
