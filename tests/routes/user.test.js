@@ -148,6 +148,33 @@ describe('Test user route', () => {
         usersRes.body.users.forEach((user) => {
             expect(user.username).not.toBe('User2')
         })
+    })
+
+    it('Creates a chat with another user', async () => {
+        const userRes = await api.get('/api/users/me')
+            .set('authorization', "Bearer " + tokenMock.token)
+        expect(userRes.body.user).not.toBeUndefined()
+        expect(userRes.body.user.id).not.toBeUndefined()
+
+        const usersRes = await api.get('/api/users')
+            .set('authorization', "Bearer " + tokenMock.token)
+        expect(usersRes.body.users).not.toBeUndefined()
+        expect(usersRes.body.users.length).toBe(1)
+        // Single user of a list
+        const user = usersRes.body.users[0]
+        expect(user).not.toBeUndefined()
+
+        const createChatRes = await api.post('/api/users/me/chats')
+            .set('authorization', "Bearer " + tokenMock.token)
+            .send({
+                userId: user._id,
+                message: "Hello there!"
+            })
+        expect(createChatRes.body.message).toBe("New chat created")
+        expect(createChatRes.status).toBe(201)
+        
+
+
 
     })
     
