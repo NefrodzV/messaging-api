@@ -122,6 +122,7 @@ function UserController() {
                 const users = await User.find({
                     _id: { $ne: decode.id }
                 }, { 
+                    _id: 1,
                     "profile.username": 1,
                 })
                 

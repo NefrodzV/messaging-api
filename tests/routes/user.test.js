@@ -116,7 +116,15 @@ describe('Test user route', () => {
     })
 
     
-    
+    /**
+     * TODO TESTS: 
+     * Responds with user -> DONE
+     * Gets all users except the one in session
+     * Gets all chats of user in session
+     * Get a chat with all the messages
+     * Create a chat
+     * Create a message
+     */
 
     it('Returns the user in session data', async() => {
         expect(tokenMock).not.toBeUndefined()
@@ -128,15 +136,21 @@ describe('Test user route', () => {
         expect(meRes.body.user.username).toBe('User2')
     })
 
-    /**
-     * TODO TESTS: 
-     * Responds with user
-     * Gets all users except the one in session
-     * Gets all chats of user in session
-     * Get a chat with all the messages
-     * Create a chat
-     * Create a message
-     */
+    it('Returns user list except the one in session', async () => {
+        expect(tokenMock).not.toBeUndefined()
+        const usersRes = await api.get('/api/users')
+            .set('authorization', "Bearer " + tokenMock.token)
+        expect(usersRes.status).toBe(200)
+        expect(usersRes.body).toHaveProperty('users')
+        expect(usersRes.body.users).not.toBeUndefined()
+        
+        // Checking that the user in session is not in list
+        usersRes.body.users.forEach((user) => {
+            expect(user.username).not.toBe('User2')
+        })
+
+    })
+    
 
 //     it('Responds with the authorized user', done => {
 //         // Simulates registration
