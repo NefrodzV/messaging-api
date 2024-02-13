@@ -14,22 +14,51 @@ function UserController() {
 
     // Handles the chat creation of user and 
     const getUser = [
-        verifyToken,
-        async (req, res) => {
+        // Validating and Sanitizing
+        header('authorization', 'Requires authorization')
+            .exists({ values: 'falsy' })
+            .bail()
+            .contains('Bearer ')
+            .withMessage('Authorization doesnt contain Bearer')
+            .customSanitizer(input => {
+                const authHeader = input.split(' ')
+                const token = authHeader[1]
+                return token
+            })
+            .isJWT()
+            .withMessage('Forbidden')
+        ,
+ 
+        async (req, res, next) => {
             // Processing the token data
-            jwt.verify(req.token, process.env.TOKEN_SECRET, async (err, data) => {
-                if(err) throw new Error('Decode error')
-                if(!data) {
-                    res.status(403).json({ msg: "Forbidden" })
+            const result = validationResult(req)
+           if(!result.isEmpty()) {
+                const mappedResult = result.mapped()
+                const errors = {}
+                for(const key of Object.keys(mappedResult)) {
+                    errors[`${key}`] = mappedResult[`${key}`].msg
                 }
+                res.status(403).json({
+                    errors: errors
+                })
+                return
+            }
 
-                const user = await User.findById(data.id, {
+            try {
+                const data = matchedData(req)
+                const decode = jwt.verify(data.authorization, process.env.TOKEN_SECRET)
+                const user = await User.findById(decode.id, {
                     "profile.username": 1,
                     "profile.image": 1
                 }
                 )
-                res.status(200).json({user: user})
-            })
+                res.status(200).json({user: {
+                    username: user.profile.username,
+                    image: user.profile.image
+                }})
+            } catch(e) {
+                next(e)
+            }
         }
     ]
     
@@ -59,6 +88,8 @@ function UserController() {
         // Sanitizing and validating
         header('authorization', 'Require authorization')
             .notEmpty()
+            .exists({ values: 'undefined' })
+            .withMessage('authorization not defined')
             .customSanitizer((input) => {
                 const headers = input.split(' ')
                 const token = headers[1]
@@ -68,7 +99,7 @@ function UserController() {
             .withMessage('Forbidden')
             .escape(),
 
-        async(req, res) => {
+        async(req, res, next) => {
             const result = validationResult(req)
             if(!result.isEmpty()) {
                 const mappedResult = result.mapped()
@@ -89,7 +120,6 @@ function UserController() {
                     process.env.TOKEN_SECRET
                 )
 
-                console.log(decode)
                 const users = await User.find({
                     _id: { $ne: decode.id }
                 }, { 
@@ -97,48 +127,14 @@ function UserController() {
                 })
                 
                 res.status(200).json({ users: users })
-            } catch(e) {
-                if(err instanceof JsonWebTokenError) {
-                    console.log('Verify token error: ' + e.message)
-                    res.status(403).json({ errors: {
-                        authorization: 'Forbidden'
-                    }})
-                    return
-                }
-
-                if(e instanceof mongo.MongoServerError) {
-                    res.status(500).json({ errors: {
-                        database: "Something went wrong with database"
-                    }})
-                    return
-                }
-                console.log("Unhandled error: " + e)
-                res.status(500).json({
-                    errors: {
-                        server: "Something went wrong with the server"
-                    }
-                })
+            } catch(e) { 
+                console.log("Handling error")
+                next(e)
+                
             }
         }
         
     ]
-
-    // Helper functions
-    async function verifyToken(req, res, next) {
-        const bearerHeader = req.headers['authorization']
-        if(bearerHeader) {
-            const bearer = bearerHeader.split(' ')
-            const token = bearer[1]
-            if(!token){
-                res.status(403).json({ msg: "Forbidden"})
-                return
-            }
-            req.token = token
-            next()
-        } else {
-            res.status(403).json({ msg: "Forbidden" })
-        }
-    }
 
     return {
         getUser,
