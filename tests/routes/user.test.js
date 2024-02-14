@@ -171,11 +171,47 @@ describe('Test user route', () => {
                 message: "Hello there!"
             })
         expect(createChatRes.body.message).toBe("New chat created")
+        expect(createChatRes.status).toBe(201) 
+    })
+
+    it('Gets a chat with id', async () => {
+        //Set up
+        const userRes = await api.get('/api/users/me')
+            .set('authorization', "Bearer " + tokenMock.token)
+        expect(userRes.body.user).not.toBeUndefined()
+        expect(userRes.body.user.id).not.toBeUndefined()
+
+        // Get list of users
+        const usersRes = await api.get('/api/users')
+            .set('authorization', "Bearer " + tokenMock.token)
+        expect(usersRes.body.users).not.toBeUndefined()
+        expect(usersRes.body.users.length).toBe(1)
+        // Single user of a list
+        const user = usersRes.body.users[0]
+        expect(user).not.toBeUndefined()
+
+        // Create a chat with said user
+        const createChatRes = await api.post('/api/users/me/chats')
+            .set('authorization', "Bearer " + tokenMock.token)
+            .send({
+                userId: user._id,
+                message: "Hello there!"
+            })
+        expect(createChatRes.body.message).toBe("New chat created")
         expect(createChatRes.status).toBe(201)
-        
 
+        // Getting chat with id
+        const chatId = createChatRes.body.chat.id
+        expect(chatId).not.toBeUndefined()
+        const chatRes = await api
+        .get('/api/users/me/chats/' +  chatId)
+        .set('authorization', "Bearer " + tokenMock.token)
 
-
+        expect(chatRes.status).toBe(200)
+        expect(chatRes.body).not.toBeUndefined()
+        expect(chatRes.body).toHaveProperty('chat')
+        expect(chatRes.body.chat).toHaveProperty('messages')
+        expect(chatRes.body.chat.messages.length).toBe(1)
     })
     
 

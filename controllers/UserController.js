@@ -3,10 +3,10 @@ import { User, Chat, Message } from '../models'
 import { mongo } from 'mongoose'
 import { 
     header, 
-    body, 
-    params, 
+    body,  
     validationResult , 
-    matchedData } from 'express-validator'
+    matchedData, 
+    param} from 'express-validator'
 import { configDotenv } from 'dotenv'
 configDotenv()
 
@@ -87,6 +87,8 @@ function UserController() {
     ]
 
     // Create a new chat with other user
+    /** TODO: Return a already made chat if there is already a 
+    chat with the user and return the existing chat */
     const createChat = [
         validateHeaders(),
         // Represents the other user to send
@@ -145,15 +147,56 @@ function UserController() {
                     }
                 })  
             } catch(e) {
-                console.log(e)
                 next(e)
             }
         }
     ]
 
-    const getChat = (req, res) => {
-        res.send('Get a specific user chat with chatId not implemented')
-    }
+    const getChat = [
+        validateHeaders(),
+        param('chatId', "Require chat id")
+        .exists({ values: 'falsy'})
+        .bail()
+        .isMongoId()
+        .withMessage('Invalid mongo id format')
+        .escape(),
+
+        async(req, res, next) => {
+            const result = validationResult(req)
+            if(!result.isEmpty()) {
+                const mappedResult = result.mapped()
+                const errors = {}
+                for(const key of Object.keys(mappedResult)) {
+                    errors[`${key}`] = mappedResult[`${key}`].msg
+                }
+                res.status(403).json({
+                    errors: errors
+                })
+            }
+
+            try {
+                const data = matchedData(req)
+                const decode = jwt.verify(
+                    data.authorization,
+                    process.env.TOKEN_SECRET
+                )
+
+                const chat = await Chat.findById(data.chatId)
+                const messages = await Message.find({
+                    chatId: data.chatId
+                })
+
+                res.status(200).json({
+                    chat: {
+                        chat, 
+                        messages: messages
+                    }
+                })
+            } catch(e) {
+                next(e)
+            }
+        }
+    ]
 
     const createMessage = (req, res) => {
         res.send('Send a message in a specific chat not implemented')
@@ -196,9 +239,7 @@ function UserController() {
                 
                 res.status(200).json({ users: users })
             } catch(e) { 
-                console.log("Handling error")
                 next(e)
-                
             }
         }
     ]
