@@ -119,11 +119,11 @@ describe('Test user route', () => {
     /**
      * TODO TESTS: 
      * Responds with user -> DONE
-     * Gets all users except the one in session
-     * Gets all chats of user in session
-     * Get a chat with all the messages
-     * Create a chat
-     * Create a message
+     * Gets all users except the one in session DONE
+     * Gets all chats of user in session DONE
+     * Get a chat with all the messages DONE
+     * Create a chat DONE 50%
+     * Create a message DONE
      */
 
     it('Returns the user in session data', async() => {
@@ -213,7 +213,87 @@ describe('Test user route', () => {
         expect(chatRes.body.chat).toHaveProperty('messages')
         expect(chatRes.body.chat.messages.length).toBe(1)
     })
-    
+
+    it('Get all the messages of a chat', async() => {
+        const userRes = await api.get('/api/users/me')
+        .set('authorization', "Bearer " + tokenMock.token)
+        expect(userRes.body.user).not.toBeUndefined()
+        expect(userRes.body.user.id).not.toBeUndefined()
+
+        // Get list of users
+        const usersRes = await api.get('/api/users')
+        .set('authorization', "Bearer " + tokenMock.token)
+        expect(usersRes.body.users).not.toBeUndefined()
+        expect(usersRes.body.users.length).toBe(1)
+        // Single user of a list
+        const user = usersRes.body.users[0]
+        expect(user).not.toBeUndefined()
+
+        // Create a chat with said user
+        const createChatRes = await api.post('/api/users/me/chats')
+            .set('authorization', "Bearer " + tokenMock.token)
+            .send({
+                userId: user._id,
+                message: "Hello there!"
+            })
+        expect(createChatRes.body.message).toBe("New chat created")
+        expect(createChatRes.status).toBe(201)
+
+        // Getting chat with id
+        const chatId = createChatRes.body.chat.id
+        expect(chatId).not.toBeUndefined()
+
+        const getMessagesRes = await api
+            .get(`/api/users/me/chats/${chatId}/messages`)
+        expect(getMessagesRes.status).toBe(200)
+        expect(getMessagesRes.body).toHaveProperty('messages')
+        expect(getMessagesRes.body.messages).not.toBeUndefined()
+    })
+
+    it('Creates a new message in a chat', async() => {
+        const userRes = await api.get('/api/users/me')
+        .set('authorization', "Bearer " + tokenMock.token)
+        expect(userRes.body.user).not.toBeUndefined()
+        expect(userRes.body.user.id).not.toBeUndefined()
+
+        // Get list of users
+        const usersRes = await api.get('/api/users')
+        .set('authorization', "Bearer " + tokenMock.token)
+        expect(usersRes.body.users).not.toBeUndefined()
+        expect(usersRes.body.users.length).toBe(1)
+        // Single user of a list
+        const user = usersRes.body.users[0]
+        expect(user).not.toBeUndefined()
+
+        // Create a chat with said user
+        const createChatRes = await api.post('/api/users/me/chats')
+            .set('authorization', "Bearer " + tokenMock.token)
+            .send({
+                userId: user._id,
+                message: "Hello there!"
+            })
+        expect(createChatRes.body.message).toBe("New chat created")
+        expect(createChatRes.status).toBe(201)
+
+        // Creating another message with chatId
+        const chatId = createChatRes.body.chat.id
+        expect(chatId).not.toBeUndefined()
+
+        const createMessage = await api
+            .post(`/api/users/me/chats/${chatId}/messages`)
+            .set('authorization', 'Bearer ' + tokenMock.token)
+            .send({
+                message: 'Hello!'
+            })
+        expect(createMessage.status).toBe(201)
+        
+        const getMessagesRes = await api
+            .get(`/api/users/me/chats/${chatId}/messages`)
+        expect(getMessagesRes.status).toBe(200)
+        expect(getMessagesRes.body).toHaveProperty('messages')
+        expect(getMessagesRes.body.messages).not.toBeUndefined()
+        expect(getMessagesRes.body.messages.length).toBe(2)
+    })
 
 //     it('Responds with the authorized user', done => {
 //         // Simulates registration
