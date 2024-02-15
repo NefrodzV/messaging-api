@@ -6,7 +6,8 @@ import {
     body,  
     validationResult , 
     matchedData, 
-    param} from 'express-validator'
+    param,
+    query} from 'express-validator'
 import { configDotenv } from 'dotenv'
 configDotenv()
 
@@ -52,6 +53,13 @@ function UserController() {
     
     const getChats = [
         validateHeaders(),
+        // Getting a chat with another user with id
+        query('userId')
+            .optional()
+            .trim()
+            .isMongoId()
+            .withMessage('Invalid id format')
+            .escape(),
         async(req, res , next) => {
             const result = validationResult(req)
             if(!result.isEmpty()) {
@@ -70,6 +78,27 @@ function UserController() {
                     data.authorization,
                     process.env.TOKEN_SECRET
                 )
+
+                if(data.userId) {
+                    // Look up chat with the other user with his id
+                    const chat = await Chat.findOne({
+                        users: { $all: [data.userId, decode.id]}
+                    },{
+                        _id: 1,
+                        users: 1,
+                        messages: 1
+                    }).populate('users').populate('messages')
+
+                    // If nothing was found
+                    if(!chat) return res.status(409).json({
+                        message: "Another chat with this user could not be found"
+                    })
+
+                    return res.status(200).json({
+                        message: "Chat with this user found",
+                        chat: chat
+                    })
+                }
 
                 const chats = await Chat.find({
                     users: decode.id
@@ -118,6 +147,7 @@ function UserController() {
             }
 
             try {
+
                 const data = matchedData(req)
                 const decode = jwt.verify(
                     data.authorization,
@@ -130,7 +160,8 @@ function UserController() {
 
                 const chat = new Chat({
                     users: [data.userId, decode.id],
-                    lastMessage: message._id
+                    lastMessage: message._id,
+                    messages: [message._id]
                 })
 
                 message.chatId = chat._id
@@ -155,11 +186,11 @@ function UserController() {
     const getChat = [
         validateHeaders(),
         param('chatId', "Require chat id")
-        .exists({ values: 'falsy'})
-        .bail()
-        .isMongoId()
-        .withMessage('Invalid mongo id format')
-        .escape(),
+            .exists({ values: 'falsy'})
+            .bail()
+            .isMongoId()
+            .withMessage('Invalid id format')
+            .escape(),
 
         async(req, res, next) => {
             const result = validationResult(req)
