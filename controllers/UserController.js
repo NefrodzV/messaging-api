@@ -51,99 +51,6 @@ function UserController() {
         }
     ]
     
-    const createMessage = [
-        validateHeaders(),
-        param('chatId', 'Require chat id')
-            .trim()
-            .exists({ values: 'falsy'})
-            .bail()
-            .isMongoId(),
-        body('message', 'Message is empty')
-        .trim()
-        .exists({values: 'falsy'})
-        .bail()
-        .isLength({ max: 500 })
-        .withMessage('Maximum of 500 characters'),
-
-        async (req, res, next) => {
-            const result = validationResult(req)
-            if(!result.isEmpty()) {
-                const mappedResult = result.mapped()
-                const errors = {}
-                for(const key of Object.keys(mappedResult)) {
-                    errors[`${key}`] = mappedResult[`${key}`].msg
-                }
-                res.status(403).json({
-                    errors: errors
-                })
-                return
-            }
-
-            try {
-                const data = matchedData(req)
-                const decode = jwt.verify(
-                    data.authorization,
-                    process.env.TOKEN_SECRET
-                )
-
-                await Message.create({
-                    chatId: data.chatId,
-                    user: decode.id,
-                    text: data.message
-                })
-
-                res.status(201).json({
-                    message: "New message created in chat"
-                })
-            } catch(e) {
-                next(e)
-            }
-        }
-            
-    ]
-    const getMessages = [
-        // validateHeaders(),
-        param('chatId', 'Require chat id')
-            .trim()
-            .exists({ values: 'falsy'})
-            .bail()
-            .isMongoId()
-            .withMessage('Invalid mongo id format')
-            .escape(),
-        async (req, res, next) =>{
-            const result = validationResult(req)
-            if(!result.isEmpty()) {
-                const mappedResult = result.mapped()
-                const errors = {}
-                for(const key of Object.keys(mappedResult)) {
-                    errors[`${key}`] = mappedResult[`${key}`].msg
-                }
-                res.status(403).json({
-                    errors: errors
-                })
-                return
-            }
-
-            try {
-                const data = matchedData(req)
-                // const decode = jwt.decode(
-                //     data.authorization,
-                //     process.env.TOKEN_SECRET
-                // )
-
-                const messages = await Message.find({
-                    chatId: data.chatId
-                })
-                res.status(200).send({
-                    messages: messages
-                })
-
-            } catch(e) {
-                next(e)
-            }
-        }
-    ]
-
     // Should returns all users except the user in session
     const getUsers = [
         validateHeaders(),
@@ -184,9 +91,7 @@ function UserController() {
 
     return {
         getUser,
-        getUsers,
-        getMessages,
-        createMessage
+        getUsers
     }
 
 }
