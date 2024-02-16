@@ -1,5 +1,5 @@
 import express from 'express'
-import { SessionRouter, UserRouter } from './routes/index.js'
+import { ChatRouter, MessageRouter, SessionRouter, UserRouter } from './routes/index.js'
 
 const app = express()
 
@@ -11,9 +11,12 @@ app.use('/', (req, res) => {
 })
 app.use('/api/session', SessionRouter)
 app.use('/api/users',  UserRouter)
+app.use('/api/chats/', ChatRouter)
+app.use('/api/messages', MessageRouter)
 
 // Error handling globally
 app.use((err, req, res, next) => {
+    console.log("Error happened: " + e)
     if(err instanceof JsonWebTokenError) {
         res.status(403).json({ errors: {
             authorization: 'Forbidden'
