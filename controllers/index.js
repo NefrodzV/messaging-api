@@ -1,11 +1,13 @@
 import UserController from "./UserController.js";
 import SessionController from "./SessionController.js";
 import ChatController from "./ChatController.js";
+import MessageController from "./MessageController.js";
 import { header } from 'express-validator'
 
 const userController = UserController()
 const sessionController = SessionController()
 const chatController = ChatController()
+const messageController = MessageController()
 
 function validateHeaders() {
     return header('authorization', 'Requires authorization')
@@ -23,4 +25,9 @@ function validateHeaders() {
     .escape()
 }
 
-export { userController, sessionController, chatController, validateHeaders }
+export { 
+    userController, 
+    sessionController, 
+    chatController,
+    messageController,
+    validateHeaders }
