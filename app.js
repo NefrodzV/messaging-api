@@ -1,17 +1,27 @@
 import express from 'express'
-import { ChatRouter, MessageRouter, SessionRouter, UserRouter } from './routes/index.js'
+import { 
+    ChatRouter, MessageRouter, SessionRouter, UserRouter
+ } from './routes/index.js'
+import mongoose from 'mongoose'
+import { configDotenv } from 'dotenv'
+configDotenv()
 
 const app = express()
+
+main().catch(e => console.log('Connecting to database error: '+ e))
+const db = mongoose.connection
+db.on('error', () => console.log('db connection failed'))
 
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 
-app.use('/', (req, res) => {
-    res.status(200).json({ msg: "Index api working"})
+// TODO: Erase or leave this depending if its needed
+app.get('/', (req, res) => {
+    res.status(200).json({ msg: "Messaging api working"})
 })
 app.use('/api/session', SessionRouter)
 app.use('/api/users',  UserRouter)
-app.use('/api/chats/', ChatRouter)
+app.use('/api/chats', ChatRouter)
 app.use('/api/messages', MessageRouter)
 
 // Error handling globally
@@ -40,3 +50,7 @@ app.use((err, req, res, next) => {
 })
 
 app.listen(3000, () => console.log("Server started in port 3000"))
+
+async function main() {
+    await mongoose.connect(process.env.DB_URL)
+}
