@@ -1,5 +1,5 @@
-import { validateHeaders } from ".";
-import { Message } from "../models";
+import { validateHeaders } from "./index.js";
+import { Message } from "../models/index.js";
 import jwt from 'jsonwebtoken'
 import { 
     header, 
@@ -45,7 +45,6 @@ function MessageController() {
                     data.authorization,
                     process.env.TOKEN_SECRET
                 )
-                    console.log(data)
                 await Message.create({
                     chatId: data.chatId,
                     user: decode.id,
@@ -86,7 +85,6 @@ function MessageController() {
 
             try {
                 const data = matchedData(req)
-                console.log(data)
                 // const decode = jwt.decode(
                 //     data.authorization,
                 //     process.env.TOKEN_SECRET

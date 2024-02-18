@@ -1,13 +1,9 @@
-import jwt, { JsonWebTokenError } from 'jsonwebtoken'
-import { User, Chat, Message } from '../models'
-import { validateHeaders } from '.'
-import { 
-    header, 
-    body,  
+import jwt from 'jsonwebtoken'
+import { User } from '../models/index.js'
+import { validateHeaders } from './index.js'
+import {   
     validationResult , 
-    matchedData, 
-    param,
-    query} from 'express-validator'
+    matchedData } from 'express-validator'
 import { configDotenv } from 'dotenv'
 configDotenv()
 
@@ -97,4 +93,3 @@ function UserController() {
 }
 
 export default UserController
-

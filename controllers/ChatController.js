@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import { Chat, Message } from '../models'
+import { Chat, Message } from '../models/index.js'
 import { 
     body,  
     validationResult , 
