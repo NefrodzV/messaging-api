@@ -3,7 +3,9 @@ import {
     ChatRouter, MessageRouter, SessionRouter, UserRouter
  } from './routes/index.js'
 import mongoose from 'mongoose'
+import cors from  'cors'
 import { configDotenv } from 'dotenv'
+
 configDotenv()
 
 const app = express()
@@ -11,7 +13,7 @@ const app = express()
 main().catch(e => console.log('Connecting to database error: '+ e))
 const db = mongoose.connection
 db.on('error', () => console.log('db connection failed'))
-
+app.use(cors())
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 
