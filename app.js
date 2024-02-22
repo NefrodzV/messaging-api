@@ -2,9 +2,10 @@ import express from 'express'
 import { 
     ChatRouter, MessageRouter, SessionRouter, UserRouter
  } from './routes/index.js'
-import mongoose from 'mongoose'
+import {mongoose, mongo} from 'mongoose'
 import cors from  'cors'
 import { configDotenv } from 'dotenv'
+import jwt from 'jsonwebtoken'
 
 configDotenv()
 
@@ -28,23 +29,26 @@ app.use('/api/messages', MessageRouter)
 
 // Error handling globally
 app.use((err, req, res, next) => {
-    console.log("Error happened: " + e)
-    if(err instanceof JsonWebTokenError) {
+    if(err instanceof mongo.MongoServerError) {
+        console.log("Mongo server error is true")
+        if(err.code === 11000) {
+            res.status(409).json({ 
+                errors: {
+                    email: "Email is already in use"
+                }
+            })
+
+            return
+        }
+    }
+
+    if(err instanceof jwt.JsonWebTokenError) {
         res.status(403).json({ errors: {
             authorization: 'Forbidden'
         }})
         return
     }
 
-    if(err instanceof mongo.MongoServerError) {
-        res.status(500).json({ 
-            errors: {
-                database: "Something went wrong with the database"
-            }
-        })
-        return
-    }
-    
     // Any unhandled error
     res.status(500).json({
         message: "Something went wrong with the server"
