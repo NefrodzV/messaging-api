@@ -114,7 +114,9 @@ function SessionController() {
                 // User doesnt exist in db
                 if(!user) {
                     res.status(400).json({
-                        msg: "Incorrect username or password. Please try again"
+                        errors: {
+                            auth: "Incorrect username or password"
+                        }
                     })
                     return
                 }
@@ -122,7 +124,9 @@ function SessionController() {
                 // Incorrect user password
                 if(!correctPassword) {
                     res.status(400).json({
-                        msg: "Incorrect username or password. Please try again"
+                        errors: {
+                            auth: "Incorrect username or password"
+                        }
                     })
                     return
                 }
