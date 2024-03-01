@@ -3,8 +3,9 @@ import { User } from '../models/index.js'
 import { validateHeaders } from './index.js'
 import {   
     validationResult , 
-    matchedData } from 'express-validator'
+    matchedData, body } from 'express-validator'
 import { configDotenv } from 'dotenv'
+import bcrypt from 'bcryptjs'
 configDotenv()
 
 function UserController() {
@@ -84,7 +85,86 @@ function UserController() {
             }
         }
     ]
+    const changePassword = [
+        validateHeaders(),
+        body('password', 'Password cannot be empty or not defined')
+            .trim()
+            .exists({ values: 'falsy'})  
+            .bail()
+            .escape(),
+        body('newPassword', "New password cannot be empty")
+            .trim()
+            .exists({ values: 'falsy'})  
+            .bail()
+            .isLength({})
+            .escape(),
+        body('confirmPassword', 'Password confirmation cannot be empty')
+            .trim()
+            .exists({ values: 'falsy'})
+            .bail(),
+        body('confirmPassword', "Confirm password not equal password")
+            .custom((input, { req }) => {
+                return input === req.body.newPassword
+            }).escape(),     
 
+        async (req, res, next) =>{
+            const result = validationResult(req)
+            if(!result.isEmpty()) {
+                const mappedResult = result.mapped()
+                const errors = {}
+                for(const key of Object.keys(mappedResult)) {
+                    errors[`${key}`] = mappedResult[`${key}`].msg
+
+                }
+                res.status(422).json({ errors: errors })
+                return
+            }
+
+            try {
+                const requestData = matchedData(req)
+                const tokenData = jwt.verify(
+                    requestData.authorization,
+                    process.env.TOKEN_SECRET)
+                
+                const user = await User.findById(tokenData.id)
+
+                if(!user) {
+                    return res.status(409).json({
+                        errors: {
+                            database: "User doesnt exist in database"
+                        }
+                    })
+                }
+                const isCorrectPassword = await bcrypt.compare(
+                    requestData.password,
+                    user.profile.password
+                )
+
+                if(!isCorrectPassword) {
+                    return res.status(409).json({
+                        errors: {
+                            auth: "incorrect password"
+                        }
+                    })
+                }
+
+                const newHashedPassword = await bcrypt.hash(
+                    requestData.newPassword,
+                    10
+                )
+
+                // Change the password and save it to db
+                user.profile.password = newHashedPassword
+                await user.save()
+                
+                return res.status(200).json({
+                    message: "password updated"
+                })
+            } catch(e) {
+                next(e)
+            }
+        }
+    ]
     return {
         getUser,
         getUsers
