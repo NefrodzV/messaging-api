@@ -113,8 +113,10 @@ function ChatController() {
                     process.env.TOKEN_SECRET
                 )
 
+                // Find a chat that the two users have initiated
                 const message = new Message({
-                    text: data.message
+                    text: data.message,
+                    user: data.id
                 })
 
                 const chat = new Chat({
