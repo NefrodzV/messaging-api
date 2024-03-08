@@ -6,11 +6,13 @@ import {
     matchedData, body } from 'express-validator'
 import { configDotenv } from 'dotenv'
 import bcrypt from 'bcryptjs'
+import multer from 'multer'
+const upload = multer()
 configDotenv()
 
 function UserController() {
 
-    // Handles the chat creation of user and 
+    
     const getUser = [
         // Validating and Sanitizing
         validateHeaders(),
@@ -165,9 +167,65 @@ function UserController() {
             }
         }
     ]
+
+    const uploadProfileImage = [
+        upload.single('image'),
+        validateHeaders(),
+        // Checks that a file has been sent
+        body("", 'No image specified')
+            .custom((val,{ req }) => {
+                return req.file !== undefined 
+            }).bail(),
+
+        async(req, res, next) => {
+            const result = validationResult(req)
+            if(!result.isEmpty()) {
+                const mappedResult = result.mapped()
+                const errors = {}
+                for(const key of Object.keys(mappedResult)) {
+                    errors[`${key}`] = mappedResult[`${key}`].msg
+
+                }
+                console.log(errors)
+                res.status(422).json({ errors: errors })
+                return
+            }
+            try {
+                const reqData = matchedData(req)
+                const dataToken = jwt.verify(reqData.authorization,
+                    process.env.TOKEN_SECRET
+                )
+
+                const user = await User.findById(dataToken.id)
+                if(!user) {
+                    return res.status(409).json({
+                        errors: {
+                            database: 'Couldnt find user in database'
+                        }
+                    })
+                }
+
+                const image = req.file
+                user.profile.image = {
+                    name: image.originalname,
+                    mimeType: image.mimetype,
+                    data: image.buffer
+                }
+                
+                await user.save().catch(e => console.log(e))
+
+                return res.status(200).json({
+                    message: "image uploaded"
+                })
+            } catch(e) {next(e)}
+        }
+    ]
+
     return {
         getUser,
-        getUsers
+        getUsers,
+        changePassword,
+        uploadProfileImage
     }
 
 }
