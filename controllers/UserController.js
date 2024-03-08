@@ -172,7 +172,8 @@ function UserController() {
         upload.single('image'),
         validateHeaders(),
         // Checks that a file has been sent
-        body("", 'No image specified')
+        // Image for variable and the custom validator to check the correct obj
+        body("image", 'No image specified')
             .custom((val,{ req }) => {
                 return req.file !== undefined 
             }).bail(),
@@ -212,7 +213,7 @@ function UserController() {
                     data: image.buffer
                 }
                 
-                await user.save().catch(e => console.log(e))
+                await user.save()
 
                 return res.status(200).json({
                     message: "image uploaded"
