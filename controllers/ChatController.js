@@ -116,7 +116,7 @@ function ChatController() {
                 // Find a chat that the two users have initiated
                 const message = new Message({
                     text: data.message,
-                    user: data.id
+                    user: data.userId
                 })
 
                 const chat = new Chat({
