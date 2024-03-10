@@ -10,7 +10,7 @@ const userSchema = new Schema({
         image: { 
             name: String, 
             mimeType: String, 
-            data: Buffer
+            binData: Buffer
         }
     },
     chats: [{ type: Schema.Types.ObjectId, ref: "Chat" }]
