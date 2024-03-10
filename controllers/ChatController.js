@@ -63,9 +63,12 @@ function ChatController() {
                 const chats = await Chat.find({
                     users: decode.id
                 }, {
+                    // Returns the first user that is not with the specified id
+                    users: { $elemMatch: { $ne: decode.id }},
                     lastMessage: 1
-                }).populate('lastMessage')
+                }).populate('lastMessage').populate("users")
 
+                console.log(chats)
                 res.status(200).json({
                     chats: chats
                 })
