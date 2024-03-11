@@ -68,7 +68,7 @@ function ChatController() {
                     lastMessage: 1
                 }).populate('lastMessage').populate("users")
 
-                console.log(chats)
+                
                 res.status(200).json({
                     chats: chats
                 })
