@@ -9,6 +9,7 @@ import {
     param,
     query
 } from 'express-validator'
+import mongoose from "mongoose";
 
 function MessageController() {
     const createMessage = [
@@ -61,7 +62,7 @@ function MessageController() {
             
     ]
     const getMessages = [
-        // validateHeaders(),
+        validateHeaders(),
         query('chatId', 'Require chat id')
             .trim()
             .exists({ values: 'falsy'})
@@ -85,19 +86,26 @@ function MessageController() {
 
             try {
                 const data = matchedData(req)
-                // const decode = jwt.decode(
-                //     data.authorization,
-                //     process.env.TOKEN_SECRET
-                // )
+                const decode = jwt.decode(
+                    data.authorization,
+                    process.env.TOKEN_SECRET
+                )
+
+                const id = mongoose.Types.ObjectId.createFromHexString(decode.id)
 
                 const messages = await Message.find({
                     chatId: data.chatId
+                }, {
+                    myself: { $eq: ["$user", id]}, 
+                    text: 1,
+                    date: 1,
                 })
                 res.status(200).send({
                     messages: messages
                 })
 
             } catch(e) {
+                console.log(e)
                 next(e)
             }
         }
