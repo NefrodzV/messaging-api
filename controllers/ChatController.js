@@ -176,16 +176,20 @@ function ChatController() {
                     process.env.TOKEN_SECRET
                 )
 
-                const chat = await Chat.findById(data.chatId)
+                const chat = await Chat.findById(data.chatId, {
+                    users: { $elemMatch: { $ne: decode.id }},
+                    
+                }).populate('users')
+
+                console.log("Specific chat")
+                console.log(chat)
                 const messages = await Message.find({
                     chatId: data.chatId
                 })
 
                 res.status(200).json({
-                    chat: {
-                        chat, 
-                        messages: messages
-                    }
+                    chat,
+                    messages
                 })
             } catch(e) {
                 next(e)
