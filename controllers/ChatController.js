@@ -136,10 +136,8 @@ function ChatController() {
                 ])
 
                 res.status(201).json({
-                    message: "New chat created",
-                    chat:{ 
-                        id: chat._id
-                    }
+                    messages:[message],
+                    chatId: chat._id
                 })  
             } catch(e) {
                 next(e)
@@ -181,14 +179,12 @@ function ChatController() {
                     
                 }).populate('users')
 
-                console.log("Specific chat")
-                console.log(chat)
                 const messages = await Message.find({
                     chatId: data.chatId
                 })
 
                 res.status(200).json({
-                    chat,
+                    user: chat.users[0],
                     messages
                 })
             } catch(e) {
