@@ -79,6 +79,7 @@ function UserController() {
                 }, { 
                     _id: 1,
                     "profile.username": 1,
+                    "profile.image": 1
                 })
                 
                 res.status(200).json({ users: users })
