@@ -8,6 +8,7 @@ import {
     query} from 'express-validator'
 import { configDotenv } from 'dotenv'
 import { validateHeaders } from './index.js'
+import mongoose from 'mongoose'
 configDotenv()
 
 function ChatController() {
@@ -179,9 +180,17 @@ function ChatController() {
                     
                 }).populate('users')
 
+                const id = mongoose.Types.ObjectId.createFromHexString(decode.id)
                 const messages = await Message.find({
                     chatId: data.chatId
+                },{
+                    myself: { $eq: ["$user", id]},
+                    date: 1,
+                    text:1
                 })
+                
+                console.log("Messags of chat")
+                console.log(messages)
 
                 res.status(200).json({
                     user: chat.users[0],
