@@ -55,7 +55,7 @@ app.use((err, req, res, next) => {
     })
 })
 
-app.listen(3000, () => console.log("Server started in port 3000"))
+app.listen(8080, () => console.log("Server started in port 3000"))
 
 async function main() {
     await mongoose.connect(process.env.DB_URL)
