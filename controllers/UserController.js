@@ -208,6 +208,9 @@ function UserController() {
                 }
 
                 const image = req.file
+                console.log('Image of uploaded profile image')
+                console.log(image)
+                console.log(image.buffer)
                 user.profile.image = {
                     name: image.originalname,
                     mimeType: image.mimetype,
