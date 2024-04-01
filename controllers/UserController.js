@@ -214,7 +214,7 @@ function UserController() {
                 user.profile.image = {
                     name: image.originalname,
                     mimeType: image.mimetype,
-                    data: image.buffer
+                    binData: image.buffer
                 }
                 
                 await user.save()
