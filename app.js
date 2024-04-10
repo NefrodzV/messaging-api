@@ -14,7 +14,15 @@ const app = express()
 main().catch(e => console.log('Connecting to database error: '+ e))
 const db = mongoose.connection
 db.on('error', () => console.log('db connection failed'))
-app.use(cors())
+
+const corsOptions = {
+    origin: 'https://serene-babka-69b0e2.netlify.app/',
+    optionSuccessStatus: 200
+
+}
+app.use(cors(corsOptions), (req, res) => {
+    res.json({msg: "This is a private server"})
+})
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 
@@ -49,13 +57,15 @@ app.use((err, req, res, next) => {
         return
     }
 
+    console.log(req)
+    console.log(err)
     // Any unhandled error
     res.status(500).json({
         message: "Something went wrong with the server"
     })
 })
 
-app.listen(process.env.PORT, () => console.log("Server started in port 3000"))
+app.listen(process.env.PORT , () => console.log("Server started in port 3000"))
 
 async function main() {
     await mongoose.connect(process.env.DB_URL)
