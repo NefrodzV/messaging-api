@@ -1,12 +1,10 @@
 import { validateHeaders } from "./index.js";
-import { Message } from "../models/index.js";
+import { Chat, Message } from "../models/index.js";
 import jwt from 'jsonwebtoken'
 import { 
-    header, 
     body,  
     validationResult , 
     matchedData, 
-    param,
     query
 } from 'express-validator'
 import mongoose from "mongoose";
@@ -46,12 +44,15 @@ function MessageController() {
                     data.authorization,
                     process.env.TOKEN_SECRET
                 )
-                await Message.create({
+
+                const message = await Message.create({
                     chatId: data.chatId,
                     user: decode.id,
                     text: data.message
                 }).catch(e => console.log(e))
-
+                await Chat.findByIdAndUpdate(data.chatId, {
+                    lastMessage: message._id
+                })
                 res.status(201).json({
                     message: "New message created in chat"
                 })
