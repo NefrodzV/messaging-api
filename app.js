@@ -16,7 +16,7 @@ const db = mongoose.connection
 db.on('error', () => console.log('db connection failed'))
 
 const corsOptions = {
-    origin: 'https://serene-babka-69b0e2.netlify.app/',
+    origin: 'https://serene-babka-69b0e2.netlify.app',
     optionSuccessStatus: 200
 
 }
