@@ -131,15 +131,16 @@ function ChatController() {
 
                 message.chatId = chat._id
                 
-
                 await Promise.all([
                     await chat.save(),
                     await message.save()
                 ])
 
-                message.myself = true
+                const savedMessage = await Message.findById(message._id, {
+                    myself: true
+                })
                 res.status(201).json({
-                    messages:[message],
+                    messages:[savedMessage],
                     chatId: chat._id
                 })  
             } catch(e) {
