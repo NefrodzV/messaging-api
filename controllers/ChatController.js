@@ -121,6 +121,8 @@ function ChatController() {
                 const message = new Message({
                     text: data.message,
                     user: data.userId
+                }, {
+                    myself: true
                 })
 
                 const chat = new Chat({
