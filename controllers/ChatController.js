@@ -121,9 +121,7 @@ function ChatController() {
                 const message = new Message({
                     text: data.message,
                     user: data.userId
-                }, {
-                    myself: true
-                })
+                },)
 
                 const chat = new Chat({
                     users: [data.userId, decode.id],
@@ -132,12 +130,14 @@ function ChatController() {
                 })
 
                 message.chatId = chat._id
+                
 
                 await Promise.all([
                     await chat.save(),
                     await message.save()
                 ])
 
+                message.myself = true
                 res.status(201).json({
                     messages:[message],
                     chatId: chat._id
