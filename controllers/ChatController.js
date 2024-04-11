@@ -137,7 +137,9 @@ function ChatController() {
                 ])
 
                 const savedMessage = await Message.findById(message._id, {
-                    myself: true
+                    myself: true,
+                    text: 1,
+                    date: 1,
                 })
                 res.status(201).json({
                     messages:[savedMessage],
