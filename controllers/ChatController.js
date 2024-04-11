@@ -137,7 +137,7 @@ function ChatController() {
                 ])
 
                 const savedMessage = await Message.findById(message._id, {
-                    myself: true,
+                    myself: { $eq: ["$user", id]}, 
                     text: 1,
                     date: 1,
                 })
