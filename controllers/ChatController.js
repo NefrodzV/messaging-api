@@ -135,7 +135,7 @@ function ChatController() {
                     await chat.save(),
                     await message.save()
                 ])
-                const id = mongoose.Types.ObjectId.createFromHexString(data.userId)
+                const id = mongoose.Types.ObjectId.createFromHexString(decode.id)
                 const savedMessage = await Message.findById(message._id, {
                     myself: { $eq: ["$user", id]}, 
                     text: 1,
