@@ -120,7 +120,7 @@ function ChatController() {
                 // Find a chat that the two users have initiated
                 const message = new Message({
                     text: data.message,
-                    user: data.userId
+                    user: decode.id
                 },)
 
                 const chat = new Chat({
