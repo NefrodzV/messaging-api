@@ -18,9 +18,9 @@ db.on('error', () => console.log('db connection failed'))
 const corsOptions = {
     origin: 'https://serene-babka-69b0e2.netlify.app',
     optionSuccessStatus: 200
-
 }
-app.use(cors(corsOptions))
+
+app.use(cors())
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 
@@ -28,7 +28,7 @@ app.use(express.json())
 app.get('/', (req, res) => {
     res.status(200).json({ msg: "Messaging api working"})
 })
-app.use('/api/session', SessionRouter)
+app.use('/session', SessionRouter)
 app.use('/api/users',  UserRouter)
 app.use('/api/chats', ChatRouter)
 app.use('/api/messages', MessageRouter)
