@@ -6,11 +6,17 @@ import {mongoose, mongo} from 'mongoose'
 import cors from  'cors'
 import { configDotenv } from 'dotenv'
 import jwt from 'jsonwebtoken'
-
+import { Server } from 'socket.io'
+import { createServer } from 'node:http'
 configDotenv()
 
 const app = express()
-
+const server = new createServer(app)
+const io = new Server(server,{
+    cors: {
+        origin: 'http://localhost:5173'
+    }
+})
 main().catch(e => console.log('Connecting to database error: '+ e))
 const db = mongoose.connection
 db.on('error', () => console.log('db connection failed'))
@@ -63,8 +69,21 @@ app.use((err, req, res, next) => {
     })
 })
 
-app.listen(process.env.PORT , () => console.log("Server started in port 3000"))
+server.listen(process.env.PORT , () => console.log("Server started in port 3000"))
+io.on('connection', (socket) => {
+    console.log('user has connected')
+    socket.on('join', (roomId) => {
+        socket.join(roomId)
+        console.log('Someone join room : ' + roomId)
+    })
 
+    socket.on('message',(roomId, text) => {
+        console.log("message from roomId" + roomId + ' : text: ' + text)
+        io.to(roomId).emit('foo',text)
+        io.emit('foo',text)
+        // console.log(socket)
+    })
+})
 async function main() {
     await mongoose.connect(process.env.DB_URL)
 }
