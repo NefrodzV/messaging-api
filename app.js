@@ -71,6 +71,7 @@ app.use((err, req, res, next) => {
 
 server.listen(process.env.PORT , () => console.log("Server started in port 3000"))
 io.on('connection', (socket) => {
+    console.log(socket.id)
     console.log('user has connected')
     socket.on('join', (roomId) => {
         socket.join(roomId)
@@ -78,10 +79,10 @@ io.on('connection', (socket) => {
     })
 
     socket.on('message',(roomId, text) => {
-        console.log("message from roomId" + roomId + ' : text: ' + text)
-        io.to(roomId).emit('foo',text)
-        io.emit('foo',text)
-        // console.log(socket)
+        console.log('Message from roomId: ' + roomId + ' text: ' + text)
+        socket.broadcast.to(roomId).emit('foo',text)
+        // io.emit('foo',text)
+        console.log(socket.id)
     })
 })
 async function main() {
