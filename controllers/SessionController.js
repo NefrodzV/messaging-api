@@ -7,7 +7,7 @@ configDotenv()
 
 function SessionController() {
 
-    const register = [
+    const signup = [
         body('username', 'Username cannot be empty')
             .trim()
             .isLength({ min:1 })
@@ -56,11 +56,10 @@ function SessionController() {
                     10
                 )
                 const user = new User({
-                    profile: {
-                        username: req.body.username,
-                        email: req.body.email,
-                        password: encryptedPassword
-                    }
+                    username: req.body.username,
+                    email: req.body.email,
+                    password: encryptedPassword
+                    
                 })
 
                 await user.save()
@@ -68,16 +67,6 @@ function SessionController() {
 
             } catch(e) {
                 next(e)
-                // if(e instanceof mongoose.mongo.MongoServerError 
-                //     && e.code === 11000) {
-                //     res.status(409).json({
-                //         msg: "E-mail already in use"
-                //     })
-                //     return
-                // }
-                // res.status(500).json({ 
-                //     msg: "Something went wrong with the database"
-                // })
             }
         
     }]
@@ -110,7 +99,7 @@ function SessionController() {
             }
 
             try {
-                const user = await User.findOne({ "profile.email": req.body.email })
+                const user = await User.findOne({ "email": req.body.email })
                 // User doesnt exist in db
                 if(!user) {
                     res.status(400).json({
@@ -120,7 +109,7 @@ function SessionController() {
                     })
                     return
                 }
-                const correctPassword = await bcrypt.compare(req.body.password, user.profile.password)
+                const correctPassword = await bcrypt.compare(req.body.password, user.password)
                 // Incorrect user password
                 if(!correctPassword) {
                     res.status(400).json({
@@ -133,7 +122,7 @@ function SessionController() {
 
                 const payload = {
                     id: user._id,
-                    username: user.profile.username
+                    username: user.username
                 }
 
                 jwt.sign(
@@ -164,7 +153,7 @@ function SessionController() {
     
 
     return {
-        register, 
+        signup, 
         login
     }
 }

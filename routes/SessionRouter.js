@@ -3,7 +3,7 @@ import { sessionController } from '../controllers/index.js'
 
 const router = Router()
 
-router.post('/register', sessionController.register)
+router.post('/signup', sessionController.signup)
 
 router.post('/login', sessionController.login)
 
