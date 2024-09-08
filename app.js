@@ -8,6 +8,7 @@ import { configDotenv } from 'dotenv'
 import jwt from 'jsonwebtoken'
 import { Server } from 'socket.io'
 import { createServer } from 'node:http'
+import cookieParser from 'cookie-parser'
 configDotenv()
 
 const app = express()
@@ -26,6 +27,7 @@ const corsOptions = {
     optionSuccessStatus: 200
 
 }
+app.use(cookieParser())
 app.use(cors(corsOptions))
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
@@ -61,8 +63,6 @@ app.use((err, req, res, next) => {
         return
     }
 
-    console.log(req)
-    console.log(err)
     // Any unhandled error
     res.status(500).json({
         message: "Something went wrong with the server"
@@ -72,6 +72,7 @@ app.use((err, req, res, next) => {
 server.listen(process.env.PORT , () => console.log("Server started in port 3000"))
 io.on('connection', (socket) => {
     console.log(socket.id)
+    console.log(socket.request)
     console.log('user has connected')
     socket.on('join', (roomId) => {
         socket.join(roomId)
