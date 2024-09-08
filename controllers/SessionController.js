@@ -99,7 +99,10 @@ function SessionController() {
             }
 
             try {
-                const user = await User.findOne({ "email": req.body.email })
+                const user = await User.findOne({ "email": req.body.email }, {
+                    username: 1,
+                    image: 1
+                })
                 // User doesnt exist in db
                 if(!user) {
                     res.status(400).json({
@@ -147,6 +150,7 @@ function SessionController() {
 
                         return res.status(200).json({
                             message: 'sucessful login',
+                            user
                         })
                     }
                 )
