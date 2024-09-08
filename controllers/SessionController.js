@@ -63,7 +63,7 @@ function SessionController() {
                 })
 
                 await user.save()
-                res.status(201).json({ msg: "Account created successfully" })
+                return res.status(201).json({ msg: "Account created successfully" })
 
             } catch(e) {
                 next(e)
