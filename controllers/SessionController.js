@@ -99,10 +99,7 @@ function SessionController() {
             }
 
             try {
-                const user = await User.findOne({ "email": req.body.email }, {
-                    username: 1,
-                    image: 1
-                })
+                const user = await User.findOne({ "email": req.body.email })
                 // User doesnt exist in db
                 if(!user) {
                     res.status(400).json({
@@ -111,7 +108,10 @@ function SessionController() {
                         }
                     })
                     return
+
                 }
+                console.log(user)
+                console.log(req.body)
                 const correctPassword = await bcrypt.compare(req.body.password, user.password)
                 // Incorrect user password
                 if(!correctPassword) {
@@ -150,7 +150,10 @@ function SessionController() {
 
                         return res.status(200).json({
                             message: 'sucessful login',
-                            user
+                            user: {
+                                username: user.username,
+                                image: user?.image
+                            }
                         })
                     }
                 )

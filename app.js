@@ -28,7 +28,7 @@ const corsOptions = {
 
 }
 app.use(cookieParser())
-app.use(cors(corsOptions))
+app.use(cors())
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 
@@ -36,10 +36,10 @@ app.use(express.json())
 app.get('/', (req, res) => {
     res.status(200).json({ msg: "Messaging api working"})
 })
-app.use('/api/session', SessionRouter)
-app.use('/api/users',  UserRouter)
-app.use('/api/chats', ChatRouter)
-app.use('/api/messages', MessageRouter)
+app.use('/session', SessionRouter)
+app.use('/users',  UserRouter)
+app.use('/chats', ChatRouter)
+app.use('/messages', MessageRouter)
 
 // Error handling globally
 app.use((err, req, res, next) => {
