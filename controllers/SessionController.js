@@ -130,13 +130,24 @@ function SessionController() {
                     process.env.TOKEN_SECRET,
                     (err, token) => {
                         if(err) {
-                            console.log(err)
-                            res.status(500).json({ 
+                            return res.status(500).json({ 
                                 msg: 'Something went wrong with the server'
                             })
-                            return
                         }
-                        res.status(200).json({ token: token})
+                            
+                        const today = new Date()
+                        const cookieExpiration = new Date(today.getTime() + 1000 * 60 * 60 * 24 * 365)
+                    
+                        res.cookie('jwt', token, {
+                            expires: cookieExpiration,
+                            httpOnly: true,
+                            secure: true,
+                            sameSite: true
+                        })
+
+                        return res.status(200).json({
+                            message: 'sucessful login',
+                        })
                     }
                 )
 
@@ -144,7 +155,7 @@ function SessionController() {
                 res.status(500).json({
                     msg: 'Uh Oh! Something went wrong'
                 })
-                console.log(e)
+                console.error(e)
             }
             
         }
