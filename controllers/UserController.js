@@ -35,14 +35,15 @@ function UserController() {
                 const data = matchedData(req)
                 const decode = jwt.verify(data.authorization, process.env.TOKEN_SECRET)
                 const user = await User.findById(decode.id, {
-                    "profile.username": 1,
-                    "profile.image": 1
+                    "username": 1,
+                    "image": 1
                 })
+                // TODO: ADD THE CHAT LIST OF THIS USER HERE
                 res.status(200).json({
                     user: {
                     id: user._id,
-                    username: user.profile.username,
-                    image: user.profile.image
+                    username: user.username,
+                    image: user.image
                 }})
             } catch(e) {
                 next(e)
@@ -78,8 +79,8 @@ function UserController() {
                     _id: { $ne: decode.id }
                 }, { 
                     _id: 1,
-                    "profile.username": 1,
-                    "profile.image": 1
+                    "username": 1,
+                    "image": 1
                 })
                 
                 res.status(200).json({ users: users })
@@ -157,7 +158,7 @@ function UserController() {
                 )
 
                 // Change the password and save it to db
-                user.profile.password = newHashedPassword
+                user.password = newHashedPassword
                 await user.save()
                 
                 return res.status(200).json({
@@ -208,10 +209,10 @@ function UserController() {
                 }
 
                 const image = req.file
-                console.log('Image of uploaded profile image')
-                console.log(image)
-                console.log(image.buffer)
-                user.profile.image = {
+                // console.log('Image of uploaded profile image')
+                // console.log(image)
+                // console.log(image.buffer)
+                user.image = {
                     name: image.originalname,
                     mimeType: image.mimetype,
                     binData: image.buffer
