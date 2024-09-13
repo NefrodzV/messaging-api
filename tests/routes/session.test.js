@@ -9,7 +9,7 @@ import { beforeAll, afterAll, describe, it } from '@jest/globals'
 const app = express()
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
-app.use('/api/session', SessionRouter)
+app.use('/session', SessionRouter)
 
 app.use((err, req, res, next) => {
      if(err instanceof mongoose.mongo.MongoServerError 
@@ -43,9 +43,9 @@ describe('Test session route', () => {
         }
     })
     
-    it('Registers user successfully', done => {
+    it('signups user successfully', done => {
         request(app)
-            .post('/api/session/register')
+            .post('/session/signup')
             .type('form')
             .send({
                 username: "My user",
@@ -61,7 +61,7 @@ describe('Test session route', () => {
 
     it('Sends errors when fields are incorrect', done => {
         request(app)
-            .post('/api/session/register')
+            .post('/session/signup')
             .type('form')
             .send({
                 username: "",
@@ -84,7 +84,7 @@ describe('Test session route', () => {
     it('Send error when password and confirmation arent the same',
     done => {
         request(app)
-            .post('/api/session/register')
+            .post('/session/signup')
             .type('form')
             .send({
                 username: "My user",
@@ -103,7 +103,7 @@ describe('Test session route', () => {
 
     it('Replies with email already', done => {
         request(app)
-            .post('/api/session/register')
+            .post('/session/signup')
             .type('form')
             .send({
                 username: "My user",
@@ -112,7 +112,7 @@ describe('Test session route', () => {
                 confirmPassword: "123456789"
             }).then(response => {
                 request(app)
-                .post('/api/session/register')
+                .post('/session/signup')
                 .type('form')
                 .send({
                     username: "My user",
@@ -129,7 +129,7 @@ describe('Test session route', () => {
     //     conn.close()
     //     mongoServer.stop()
     //     request(app)
-    //         .post('/api/session/register')
+    //         .post('/session/signup')
     //         .type('form')
     //         .send({
     //             username: "My user",
@@ -144,7 +144,7 @@ describe('Test session route', () => {
 
     it('Responds with errors when login with empty fields', done => {
         request(app)
-            .post('/api/session/login')
+            .post('/session/login')
             .type('form')
             .send({
                 email: "",
@@ -163,35 +163,44 @@ describe('Test session route', () => {
     it('Login responds with incorrect credentials', done => {
         // In this request user doesnt exist
         request(app)
-            .post('/api/session/login')
+            .post('/session/login')
             .type('form')
             .send({
                 email: "user123@gmail.com",
                 password: "123456789"
             })
             .expect('Content-Type', /json/)
-            .expect({
-                msg: 'Incorrect username or password. Please try again' 
-            })
+            .expect(
+                { errors: { auth: 'Incorrect username or password' } } 
+            )
             .expect(400, done)
     })
 
     it('Login responds with incorrect credentials when email exist', done => {
         request(app)
-            .post('/api/session/login')
+            .post('/session/login')
             .type('form')
             .send({
                 email: 'user1234@gmail.com',
                 password: '12345678' // Incorrect password
             })
             .expect('Content-Type', /json/)
-            .expect({ msg: 'Incorrect username or password. Please try again'})
+            .expect({ errors: { auth: 'Incorrect username or password' } })
             .expect(400, done)
     })
 
-    it('Responds with json webtoken', done => {
+    it('Responds with json webtoken', done => {  
         request(app)
-            .post('/api/session/login')
+        .post('/session/signup')
+        .type('form')
+        .send({
+            username: "My user",
+            email: "user1234@gmail.com",
+            password:"123456789",
+            confirmPassword: "123456789"
+        }).then(res => {
+            request(app)
+            .post('/session/login')
             .type('form')
             .send({
                 email: 'user1234@gmail.com',
@@ -200,10 +209,14 @@ describe('Test session route', () => {
             .expect('Content-Type', /json/)
             .expect(200)
             .then(res => {
-                expect(res.body).toHaveProperty('token')
+                console.log(res)
+                
+                expect(res.header).toHaveProperty('set-cookie')
+                expect(res.header['set-cookie'][0].includes('jwt')).toBe(true)
                 done()
                 
             })
+        })
     })
 
 
