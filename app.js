@@ -8,8 +8,8 @@ import { configDotenv } from 'dotenv'
 import jwt from 'jsonwebtoken'
 import cookieParser from 'cookie-parser'
 configDotenv()
-
-export const app = express()
+import { initializeSocket }from './socket.js'
+const app = express()
 
 main().catch(e => console.log('Connecting to database error: '+ e))
 const db = mongoose.connection
@@ -21,7 +21,11 @@ const corsOptions = {
 
 }
 app.use(cookieParser())
-app.use(cors())
+app.use(cors({
+    origin: process.env.APP_URL,
+    optionsSuccessStatus: 200,
+    credentials: true
+}))
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 
@@ -63,6 +67,9 @@ app.use((err, req, res, next) => {
 })
 async function main() {
     await mongoose.connect(process.env.DB_URL)
+    
 }
 
-server.listen(process.env.PORT , () => console.log("Server started in port 3000"))
+const server = initializeSocket(app)
+    server.listen(process.env.PORT , () => console.log("Server started in port 3000"))
+
