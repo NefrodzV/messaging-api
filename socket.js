@@ -1,23 +1,23 @@
-import { Server } from 'socket.io'
-import { createServer } from 'node:http'
+import { Server } from 'socket.io';
+import { createServer } from 'node:http';
 
 export function initializeSocket(app) {
-    const server = new createServer(app)
-    const io = new Server(server,{
+    const server = new createServer(app);
+    const io = new Server(server, {
         cors: {
-            origin: 'http://localhost:5173'
-        }
-    })
+            origin: 'http://localhost:5173',
+        },
+    });
 
     io.on('connection', (socket) => {
-        console.log(socket.id)
-        console.log(socket.id)
-        io.to(socket.id).emit('update', 'Update for a certain data')
-        console.log(socket.request)
-        console.log('user has connected')
+        console.log(socket.id);
+        console.log(socket.id);
+        io.to(socket.id).emit('update', 'Update for a certain data');
+        console.log(socket.request);
+        console.log('user has connected');
         socket.on('join', (roomId) => {
-            socket.join(roomId)
-            console.log('Someone join room : ' + roomId)
+            socket.join(roomId);
+            console.log('Someone join room : ' + roomId);
             // io.to(roomId).emit('message', {
             //     _id: 'post101',
             //     user: {
@@ -30,29 +30,27 @@ export function initializeSocket(app) {
             //         'https://example.com/images/park2.jpg',
             //     ],
             // },)
-        })
-    
-        socket.on('edit',(roomId, message) => {
-            console.log('editing message from roomId: ' + roomId )
-            console.log(message)
-            io.to(roomId).emit('edit', message)
-        })
-    
-        socket.on('delete',(roomId, message) => {
-            console.log('deleting message on roomId: ' + roomId)
-            console.log(message)
-            io.to(roomId).emit('delete', message)
-    
-        })
-    
-        socket.on('message',(roomId, text) => {
-            console.log('Message from roomId: ' + roomId + ' text: ' + text)
-            socket.broadcast.to(roomId).emit('foo',text)
-            // io.emit('foo',text)
-            console.log(socket.id)
-        })
-    })
+        });
 
-    return server
+        socket.on('edit', (roomId, message) => {
+            console.log('editing message from roomId: ' + roomId);
+            console.log(message);
+            io.to(roomId).emit('edit', message);
+        });
+
+        socket.on('delete', (roomId, message) => {
+            console.log('deleting message on roomId: ' + roomId);
+            console.log(message);
+            io.to(roomId).emit('delete', message);
+        });
+
+        socket.on('message', (roomId, text) => {
+            console.log('Message from roomId: ' + roomId + ' text: ' + text);
+            socket.broadcast.to(roomId).emit('foo', text);
+            // io.emit('foo',text)
+            console.log(socket.id);
+        });
+    });
+
+    return server;
 }
- 
