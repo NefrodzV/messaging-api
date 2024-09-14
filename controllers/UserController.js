@@ -9,6 +9,7 @@ const upload = multer();
 configDotenv();
 
 function UserController() {
+    // Returns the auth user
     const getUser = [
         // Validating and Sanitizing
         validateHeaders(),
@@ -33,18 +34,33 @@ function UserController() {
                     data.authorization,
                     process.env.TOKEN_SECRET
                 );
+                const user = User.aggregate([
+                    {
+                        $match: {
+                            _id: decode.id,
+                        },
+                    },
+                    {
+                        $lookup: {
+                            from: 'chats',
+                            localField: '_id',
+                            foreignField: 'users',
+                            as: 'chats',
+                        },
+                    },
+                    {
+                        $project: {
+                            chats: 1,
+                            username: 1,
+                            image: 1,
+                        },
+                    },
+                ]);
 
-                const user = await User.findById(decode.id, {
-                    username: 1,
-                    image: 1,
-                });
                 // TODO: ADD THE CHAT LIST OF THIS USER HERE
                 res.status(200).json({
-                    user: {
-                        id: user._id,
-                        username: user.username,
-                        image: user.image,
-                    },
+                    message: 'User found',
+                    user,
                 });
             } catch (e) {
                 next(e);
