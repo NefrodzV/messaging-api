@@ -5,6 +5,7 @@ import { validationResult, matchedData, body } from 'express-validator';
 import { configDotenv } from 'dotenv';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
+import mongoose from 'mongoose';
 const upload = multer();
 configDotenv();
 
@@ -30,14 +31,15 @@ function UserController() {
 
             try {
                 const data = matchedData(req);
-                const decode = jwt.verify(
-                    data.authorization,
-                    process.env.TOKEN_SECRET
-                );
-                const user = User.aggregate([
+                console.log(data);
+                const decode = jwt.verify(data.jwt, process.env.TOKEN_SECRET);
+                console.log(decode);
+                const userAggregation = await User.aggregate([
                     {
                         $match: {
-                            _id: decode.id,
+                            _id: mongoose.mongo.ObjectId.createFromHexString(
+                                decode.id
+                            ),
                         },
                     },
                     {
@@ -60,7 +62,7 @@ function UserController() {
                 // TODO: ADD THE CHAT LIST OF THIS USER HERE
                 res.status(200).json({
                     message: 'User found',
-                    user,
+                    user: userAggregation[0],
                 });
             } catch (e) {
                 next(e);
