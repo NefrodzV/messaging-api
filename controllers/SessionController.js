@@ -135,12 +135,13 @@ function SessionController() {
                         });
                     }
 
+                    const formattedToken = 'Bearer ' + token;
                     const today = new Date();
                     const cookieExpiration = new Date(
                         today.getTime() + 1000 * 60 * 60 * 24 * 365
                     );
 
-                    res.cookie('jwt', token, {
+                    res.cookie('jwt', formattedToken, {
                         expires: cookieExpiration,
                         httpOnly: true,
                         secure: true,
