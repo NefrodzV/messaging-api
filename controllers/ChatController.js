@@ -175,42 +175,75 @@ function ChatController() {
                 for (const key of Object.keys(mappedResult)) {
                     errors[`${key}`] = mappedResult[`${key}`].msg;
                 }
-                res.status(403).json({
+                return res.status(403).json({
                     errors: errors,
                 });
             }
 
             try {
                 const data = matchedData(req);
-                const decode = jwt.verify(
-                    data.authorization,
-                    process.env.TOKEN_SECRET
-                );
+                const decode = jwt.verify(data.jwt, process.env.TOKEN_SECRET);
 
-                const chat = await Chat.findById(data.chatId, {
-                    users: { $elemMatch: { $ne: decode.id } },
-                }).populate('users');
-
-                const id = mongoose.Types.ObjectId.createFromHexString(
-                    decode.id
-                );
-                const messages = await Message.find(
+                const chatAggregation = await Chat.aggregate([
                     {
-                        chatId: data.chatId,
+                        $match: {
+                            _id: mongoose.Types.ObjectId.createFromHexString(
+                                decode.id
+                            ),
+                        },
                     },
                     {
-                        myself: { $eq: ['$user', id] },
-                        date: 1,
-                        text: 1,
-                    }
-                );
+                        $lookup: {
+                            from: 'messages',
+                            localField: '_id',
+                            foreignField: 'chatId',
+                            as: 'messages',
+                        },
+                    },
+                    {
+                        $project: {
+                            messages: 1,
+                            users: {
+                                $elemMatch: {
+                                    $ne: mongoose.Types.ObjectId.createFromHexString(
+                                        decode.id
+                                    ),
+                                },
+                            },
+                        },
+                    },
+                    {
+                        $project: {
+                            messages: 1,
+                            user: { $arrayElemAt: ['$users', 0] },
+                        },
+                    },
+                ]);
+                //                 const chat = await Chat.findById(data.chatId, {
+                //                     users: { $elemMatch: { $ne: decode.id } },
+                //                 }).populate('users');
+                //
+                //                 const id = mongoose.Types.ObjectId.createFromHexString(
+                //                     decode.id
+                //                 );
+                //                 const messages = await Message.find(
+                //                     {
+                //                         chatId: data.chatId,
+                //                     },
+                //                     {
+                //                         myself: { $eq: ['$user', id] },
+                //                         date: 1,
+                //                         text: 1,
+                //                     }
+                //                 );
 
-                console.log('Messags of chat');
-                console.log(messages);
-
-                res.status(200).json({
-                    user: chat.users[0],
-                    messages,
+                // console.log('Messags of chat');
+                // console.log(messages);
+                console.log('chat agregation');
+                console.log(chatAggregation);
+                return res.status(200).json({
+                    message: 'Chat found with id',
+                    chat: chatAggregation[0],
                 });
             } catch (e) {
                 next(e);
