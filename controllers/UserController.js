@@ -88,11 +88,8 @@ function UserController() {
             }
 
             try {
-                const header = matchedData(req);
-                const decode = jwt.verify(
-                    header.authorization,
-                    process.env.TOKEN_SECRET
-                );
+                const data = matchedData(req);
+                const decode = jwt.verify(data.jwt, process.env.TOKEN_SECRET);
 
                 const users = await User.find(
                     {
