@@ -46,6 +46,7 @@ app.use('/messages', MessageRouter);
 app.use((err, req, res, next) => {
     if (err instanceof mongo.MongoServerError) {
         console.log('Mongo server error is true');
+        console.error('Mongo error: ' + err);
         if (err.code === 11000) {
             res.status(409).json({
                 errors: {
