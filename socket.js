@@ -6,15 +6,17 @@ export function initializeSocket(app) {
     const io = new Server(server, {
         cors: {
             origin: 'http://localhost:5173',
+            credentials: true,
         },
     });
 
     io.on('connection', (socket) => {
-        console.log(socket.id);
-        console.log(socket.id);
-        io.to(socket.id).emit('update', 'Update for a certain data');
-        console.log(socket.request);
-        console.log('user has connected');
+        // console.log(socket.id);
+        // console.log(socket.id);
+        // io.to(socket.id).emit('update', 'Update for a certain data');
+        console.log('connecting to socket');
+        console.log(socket.request.headers);
+        // console.log('user has connected');
         socket.on('join', (roomId) => {
             socket.join(roomId);
             console.log('Someone join room : ' + roomId);
@@ -33,18 +35,19 @@ export function initializeSocket(app) {
         });
 
         socket.on('edit', (roomId, message) => {
-            console.log('editing message from roomId: ' + roomId);
-            console.log(message);
+            // console.log('editing message from roomId: ' + roomId);
+            // console.log(message);
             io.to(roomId).emit('edit', message);
         });
 
         socket.on('delete', (roomId, message) => {
-            console.log('deleting message on roomId: ' + roomId);
-            console.log(message);
+            // console.log('deleting message on roomId: ' + roomId);
+            // console.log(message);
             io.to(roomId).emit('delete', message);
         });
 
         socket.on('message', (roomId, text) => {
+            console.log(socket.request);
             console.log('Message from roomId: ' + roomId + ' text: ' + text);
             socket.broadcast.to(roomId).emit('foo', text);
             // io.emit('foo',text)
