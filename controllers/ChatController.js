@@ -120,10 +120,7 @@ function ChatController() {
 
             try {
                 const data = matchedData(req);
-                const decode = jwt.verify(
-                    data.authorization,
-                    process.env.TOKEN_SECRET
-                );
+                const decode = jwt.verify(data.jwt, process.env.TOKEN_SECRET);
 
                 // Finding a chat if its already with these users
                 const existingChat = await Chat.findOne({
@@ -182,7 +179,7 @@ function ChatController() {
                     {
                         $match: {
                             _id: mongoose.Types.ObjectId.createFromHexString(
-                                decode.id
+                                data.chatId
                             ),
                         },
                     },
@@ -198,10 +195,17 @@ function ChatController() {
                         $project: {
                             messages: 1,
                             users: {
-                                $elemMatch: {
-                                    $ne: mongoose.Types.ObjectId.createFromHexString(
-                                        decode.id
-                                    ),
+                                $filter: {
+                                    input: '$users',
+                                    as: 'user',
+                                    cond: {
+                                        $ne: [
+                                            '$$user',
+                                            mongoose.Types.ObjectId.createFromHexString(
+                                                decode.id
+                                            ),
+                                        ],
+                                    },
                                 },
                             },
                         },
@@ -213,6 +217,19 @@ function ChatController() {
                         },
                     },
                 ]);
+
+                await Chat.populate(chatAggregation, {
+                    path: 'user',
+                    model: 'User',
+                    select: 'username image',
+                });
+
+                // await Chat.populate(chatAggregation, { path: 'messages' });
+                // await Chat.populate(chatAggregation, { path: 'users' }).exec();
+                // await Chat.populate(chatAggregation, {
+                //     path: 'user',
+                //     select: 'username image',
+                // });
                 //                 const chat = await Chat.findById(data.chatId, {
                 //                     users: { $elemMatch: { $ne: decode.id } },
                 //                 }).populate('users');
@@ -233,6 +250,7 @@ function ChatController() {
 
                 // console.log('Messags of chat');
                 // console.log(messages);
+
                 console.log('chat agregation');
                 console.log(chatAggregation);
                 return res.status(200).json({
