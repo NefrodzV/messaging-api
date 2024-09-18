@@ -99,11 +99,11 @@ function ChatController() {
             .isMongoId()
             .withMessage('userId must be a mongo id')
             .escape(),
-        body('message', 'Require message to create chat')
-            .exists({ values: 'falsy' })
-            .bail()
-            .trim()
-            .escape(),
+        // body('message', 'Require message to create chat')
+        //     .exists({ values: 'falsy' })
+        //     .bail()
+        //     .trim()
+        //     .escape(),
         async (req, res, next) => {
             const result = validationResult(req);
             if (!result.isEmpty()) {
@@ -125,31 +125,25 @@ function ChatController() {
                     process.env.TOKEN_SECRET
                 );
 
-                // Find a chat that the two users have initiated
-                const message = new Message({
-                    text: data.message,
-                    user: decode.id,
+                // Finding a chat if its already with these users
+                const existingChat = await Chat.findOne({
+                    users: [data.userId, decode.id],
                 });
+                if (existingChat) {
+                    return response.status(409).json({
+                        message: 'chat with these users already exist',
+                        chatId: existingChat._id,
+                    });
+                }
 
                 const chat = new Chat({
                     users: [data.userId, decode.id],
-                    lastMessage: message._id,
-                    messages: [message._id],
                 });
 
-                message.chatId = chat._id;
+                await chat.save();
 
-                await Promise.all([await chat.save(), await message.save()]);
-                const id = mongoose.Types.ObjectId.createFromHexString(
-                    decode.id
-                );
-                const savedMessage = await Message.findById(message._id, {
-                    myself: { $eq: ['$user', id] },
-                    text: 1,
-                    date: 1,
-                });
                 res.status(201).json({
-                    messages: [savedMessage],
+                    message: 'chat created successfully',
                     chatId: chat._id,
                 });
             } catch (e) {
