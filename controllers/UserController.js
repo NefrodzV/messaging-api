@@ -31,9 +31,9 @@ function UserController() {
 
             try {
                 const data = matchedData(req);
-                console.log(data);
+
                 const decode = jwt.verify(data.jwt, process.env.TOKEN_SECRET);
-                console.log(decode);
+
                 const userAggregation = await User.aggregate([
                     {
                         $match: {
@@ -52,12 +52,57 @@ function UserController() {
                     },
                     {
                         $project: {
-                            chats: 1,
                             username: 1,
                             image: 1,
+                            email: 1,
+                            chats: {
+                                $map: {
+                                    input: '$chats',
+                                    as: 'chat',
+                                    in: {
+                                        users: {
+                                            $filter: {
+                                                input: '$$chat.users',
+                                                as: 'user',
+                                                cond: {
+                                                    $ne: [
+                                                        '$$user',
+                                                        mongoose.mongo.ObjectId.createFromHexString(
+                                                            decode.id
+                                                        ),
+                                                    ],
+                                                },
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    {
+                        $project: {
+                            username: 1,
+                            image: 1,
+                            email: 1,
+                            chats: {
+                                $map: {
+                                    input: '$chats',
+                                    as: 'chat',
+                                    in: {
+                                        user: { $first: '$$chat.users' },
+                                    },
+                                },
+                            },
                         },
                     },
                 ]);
+
+                await User.populate(userAggregation, {
+                    path: 'chats.user',
+                    select: '-_id -password -email',
+                });
+                console.log('user agregation');
+                console.log(userAggregation);
 
                 // TODO: ADD THE CHAT LIST OF THIS USER HERE
                 res.status(200).json({
