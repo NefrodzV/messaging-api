@@ -127,7 +127,7 @@ function ChatController() {
                     users: [data.userId, decode.id],
                 });
                 if (existingChat) {
-                    return response.status(409).json({
+                    return res.status(200).json({
                         message: 'chat with these users already exist',
                         chatId: existingChat._id,
                     });
@@ -139,7 +139,7 @@ function ChatController() {
 
                 await chat.save();
 
-                res.status(201).json({
+                return res.status(201).json({
                     message: 'chat created successfully',
                     chatId: chat._id,
                 });
