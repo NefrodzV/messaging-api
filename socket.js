@@ -71,14 +71,12 @@ export function initializeSocket(app) {
             io.to(roomId).emit('edit', updatedMessage);
         });
 
-        socket.on('delete', (roomId, message) => {
-            // console.log('deleting message on roomId: ' + roomId);
-            // console.log(message);
-            io.to(roomId).emit('delete', message);
+        socket.on('delete', async (roomId, message) => {
+            const deleteMessage = await Message.findByIdAndDelete(message._id);
+            io.to(roomId).emit('delete', deleteMessage);
         });
 
         socket.on('message', async (roomId, text) => {
-            console.log('Message from roomId: ' + roomId + ' text: ' + text);
             const user = socket.request.user;
             const message = await new Message({
                 chatId: roomId,
