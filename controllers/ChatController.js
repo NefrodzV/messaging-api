@@ -193,26 +193,7 @@ function ChatController() {
                     },
                     {
                         $project: {
-                            messages: {
-                                $map: {
-                                    input: '$messages',
-                                    as: 'message',
-                                    in: {
-                                        _id: '$$message._id',
-                                        date: '$$message.date',
-                                        text: '$$message.text',
-                                        user: '$$message.user',
-                                        mine: {
-                                            $eq: [
-                                                mongoose.Types.ObjectId.createFromHexString(
-                                                    decode.id
-                                                ),
-                                                '$$message.user',
-                                            ],
-                                        },
-                                    },
-                                },
-                            },
+                            messages: 1,
                             users: {
                                 $filter: {
                                     input: '$users',
