@@ -107,8 +107,7 @@ function SessionController() {
                     });
                     return;
                 }
-                console.log(user);
-                console.log(req.body);
+
                 const correctPassword = await bcrypt.compare(
                     req.body.password,
                     user.password
