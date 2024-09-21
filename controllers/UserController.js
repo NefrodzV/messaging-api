@@ -60,6 +60,7 @@ function UserController() {
                                     input: '$chats',
                                     as: 'chat',
                                     in: {
+                                        _id: '$$chat._id',
                                         users: {
                                             $filter: {
                                                 input: '$$chat.users',
@@ -89,6 +90,7 @@ function UserController() {
                                     input: '$chats',
                                     as: 'chat',
                                     in: {
+                                        _id: '$$chat._id',
                                         user: { $first: '$$chat.users' },
                                     },
                                 },
@@ -102,7 +104,7 @@ function UserController() {
                     select: '-_id -password -email',
                 });
                 console.log('user agregation');
-                console.log(userAggregation);
+                console.log(userAggregation[0].chats);
 
                 // TODO: ADD THE CHAT LIST OF THIS USER HERE
                 res.status(200).json({
