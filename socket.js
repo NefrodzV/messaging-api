@@ -41,7 +41,7 @@ export function initializeSocket(app) {
 
         const user = await User.findById(decode.id, { password: 0 });
         if (!user) {
-            const error = new Error('not found');
+            const error = new Error('Forbidden');
             return next(error);
         }
 
@@ -49,11 +49,9 @@ export function initializeSocket(app) {
         return next();
     });
     io.on('connection', (socket) => {
-        // console.log(socket.id);
-        // console.log(socket.id);
-        // io.to(socket.id).emit('update', 'Update for a certain data');
-        console.log('connecting to socket');
-        console.log(socket.request.headers);
+        // Join the user authorized to a room to send messages to him
+        const user = socket.request.user;
+        socket.join(user._id);
         // console.log('user has connected');
         socket.on('join', (roomId) => {
             socket.join(roomId);
