@@ -193,7 +193,26 @@ function ChatController() {
                     },
                     {
                         $project: {
-                            messages: 1,
+                            messages: {
+                                $map: {
+                                    input: '$messages',
+                                    as: 'message',
+                                    in: {
+                                        _id: '$$message._id',
+                                        date: '$$message.date',
+                                        text: '$$message.text',
+                                        user: '$$message.user',
+                                        mine: {
+                                            $eq: [
+                                                mongoose.Types.ObjectId.createFromHexString(
+                                                    decode.id
+                                                ),
+                                                '$$message.user',
+                                            ],
+                                        },
+                                    },
+                                },
+                            },
                             users: {
                                 $filter: {
                                     input: '$users',
@@ -224,35 +243,11 @@ function ChatController() {
                     select: 'username image',
                 });
 
-                // await Chat.populate(chatAggregation, { path: 'messages' });
-                // await Chat.populate(chatAggregation, { path: 'users' }).exec();
-                // await Chat.populate(chatAggregation, {
-                //     path: 'user',
-                //     select: 'username image',
-                // });
-                //                 const chat = await Chat.findById(data.chatId, {
-                //                     users: { $elemMatch: { $ne: decode.id } },
-                //                 }).populate('users');
-                //
-                //                 const id = mongoose.Types.ObjectId.createFromHexString(
-                //                     decode.id
-                //                 );
-                //                 const messages = await Message.find(
-                //                     {
-                //                         chatId: data.chatId,
-                //                     },
-                //                     {
-                //                         myself: { $eq: ['$user', id] },
-                //                         date: 1,
-                //                         text: 1,
-                //                     }
-                //                 );
-
-                // console.log('Messags of chat');
-                // console.log(messages);
-
-                console.log('chat agregation');
-                console.log(chatAggregation);
+                await Chat.populate(chatAggregation, {
+                    path: 'messages.user',
+                    model: 'User',
+                    select: '-password',
+                });
                 return res.status(200).json({
                     message: 'Chat found with id',
                     chat: chatAggregation[0],
