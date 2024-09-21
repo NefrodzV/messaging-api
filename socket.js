@@ -3,7 +3,7 @@ import { createServer } from 'node:http';
 import { validateAuthCookie } from './utils.js';
 import jwt from 'jsonwebtoken';
 import cookie from 'cookie';
-import { configDotenv } from 'dotenv';
+import { configDotenv, populate } from 'dotenv';
 import User from './models/User.js';
 import Chat from './models/Chat.js';
 import Message from './models/Message.js';
@@ -57,10 +57,18 @@ export function initializeSocket(app) {
             socket.join(roomId);
         });
 
-        socket.on('edit', (roomId, message) => {
-            // console.log('editing message from roomId: ' + roomId);
-            // console.log(message);
-            io.to(roomId).emit('edit', message);
+        socket.on('edit', async (roomId, message) => {
+            const updatedMessage = await Message.findByIdAndUpdate(
+                message._id,
+                { text: message.text },
+                {
+                    returnDocument: 'after',
+                }
+            );
+            // Maybe not need this populate because I
+            // can pass the user from the original here
+            await updatedMessage.populate('user');
+            io.to(roomId).emit('edit', updatedMessage);
         });
 
         socket.on('delete', (roomId, message) => {
