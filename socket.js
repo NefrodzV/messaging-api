@@ -49,14 +49,13 @@ export function initializeSocket(app) {
         return next();
     });
     io.on('connection', (socket) => {
-        // Set a room with user id to be able to send messages to the user
-        const user = socket.request.user;
-        socket.join(user._id);
-
-        socket.on('join', async (roomId) => {
-            // Join a user to an id in this case im using
-            //  the chat id sent from the frondend
-            console.log('user joined a room');
+        // console.log(socket.id);
+        // console.log(socket.id);
+        // io.to(socket.id).emit('update', 'Update for a certain data');
+        console.log('connecting to socket');
+        console.log(socket.request.headers);
+        // console.log('user has connected');
+        socket.on('join', (roomId) => {
             socket.join(roomId);
         });
 
