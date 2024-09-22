@@ -90,8 +90,6 @@ export function initializeSocket(app) {
         });
 
         socket.on('leave', (roomId) => {
-            console.log('user leaving a room');
-            console.log(roomId);
             socket.leave(roomId);
         });
     });
