@@ -4,7 +4,8 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "start": "nodemon app.js",
+    "start": "node app.js",
+    "dev": "nodemon app.js",
     "test": "jest"
   },
   "author": "",
@@ -19,6 +20,7 @@
     "express-mongo-sanitize": "^2.2.0",
     "express-validator": "^7.0.1",
     "jsonwebtoken": "^9.0.2",
+    "mongo-sanitize": "^1.1.0",
     "mongoose": "^8.1.2",
     "multer": "^1.4.5-lts.1",
     "nodemon": "^3.0.3",
