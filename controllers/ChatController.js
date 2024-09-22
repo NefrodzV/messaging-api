@@ -8,37 +8,18 @@ import {
     query,
 } from 'express-validator';
 import { configDotenv } from 'dotenv';
-import { validateHeaders } from './index.js';
+import { sendErrors, validateHeaders } from './index.js';
 import mongoose from 'mongoose';
+import config from '../config.js';
 configDotenv();
 
 const getChats = [
     validateHeaders(),
-    // Getting a chat with another user with id
-    query('userId')
-        .optional()
-        .trim()
-        .isMongoId()
-        .withMessage('Invalid id format')
-        .escape(),
+    sendErrors,
     async (req, res, next) => {
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            const mappedResult = result.mapped();
-            const errors = {};
-            for (const key of Object.keys(mappedResult)) {
-                errors[`${key}`] = mappedResult[`${key}`].msg;
-            }
-            res.status(403).json({
-                errors: errors,
-            });
-        }
         try {
             const data = matchedData(req);
-            const decode = jwt.verify(
-                data.authorization,
-                process.env.TOKEN_SECRET
-            );
+            const decode = jwt.verify(data.authorization, config.TOKEN_SECRET);
 
             if (data.userId) {
                 // Look up chat with the other user with his id
@@ -103,23 +84,11 @@ const createChat = [
     //     .bail()
     //     .trim()
     //     .escape(),
+    sendErrors,
     async (req, res, next) => {
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            const mappedResult = result.mapped();
-            const errors = {};
-            for (const key of Object.keys(mappedResult)) {
-                errors[`${key}`] = mappedResult[`${key}`].msg;
-            }
-            res.status(403).json({
-                errors: errors,
-            });
-            return;
-        }
-
         try {
             const data = matchedData(req);
-            const decode = jwt.verify(data.jwt, process.env.TOKEN_SECRET);
+            const decode = jwt.verify(data.jwt, config.TOKEN_SECRET);
 
             // Finding a chat if its already with these users
             const existingChat = await Chat.findOne({
@@ -157,22 +126,11 @@ const getChat = [
         .withMessage('Invalid id format')
         .escape(),
 
+    sendErrors,
     async (req, res, next) => {
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            const mappedResult = result.mapped();
-            const errors = {};
-            for (const key of Object.keys(mappedResult)) {
-                errors[`${key}`] = mappedResult[`${key}`].msg;
-            }
-            return res.status(403).json({
-                errors: errors,
-            });
-        }
-
         try {
             const data = matchedData(req);
-            const decode = jwt.verify(data.jwt, process.env.TOKEN_SECRET);
+            const decode = jwt.verify(data.jwt, config.TOKEN_SECRET);
 
             const chatAggregation = await Chat.aggregate([
                 {
