@@ -26,8 +26,8 @@ function sendErrors(req, res, next) {
         const mappedResult = result.mapped();
         console.log(mappedResult);
         const errors = {};
+        // If error is an authorization error
         if (Object.hasOwn(mappedResult, 'jwt')) {
-            console.log('has a jwt error');
             errors['jwt'] = mappedResult['jwt'].msg;
             return res.status(403).json({
                 errors,
@@ -37,11 +37,10 @@ function sendErrors(req, res, next) {
                 errors[`${key}`] = mappedResult[`${key}`].msg;
             }
         }
-        return res.status(403).json({
+        return res.status(422).json({
             errors: errors,
         });
     }
-    console.log(errors);
     next();
 }
 
