@@ -3,6 +3,7 @@ import { Chat, Message } from '../models/index.js';
 import jwt from 'jsonwebtoken';
 import { body, validationResult, matchedData, query } from 'express-validator';
 import mongoose from 'mongoose';
+import sanitize from 'mongo-sanitize';
 
 const createMessage = [
     validateHeaders(),
@@ -112,7 +113,7 @@ const onSocketMessage = async (io, socket, roomId, text, resCb) => {
     let errors = null;
     // Check if room id is valid
     if (!mongoose.isObjectIdOrHexString(roomId)) {
-        errors['id'] = 'invalid mongo db id';
+        errors['id'] = 'invalid mongo id';
     }
 
     if (typeof text != 'string') {
@@ -155,9 +156,32 @@ const onSocketMessage = async (io, socket, roomId, text, resCb) => {
 };
 
 const onSocketEditMessage = async (io, socket, roomId, data, resCb) => {
+    let errors = null;
+    // Check if room id is valid
+    if (!mongoose.isObjectIdOrHexString(roomId)) {
+        errors['id'] = 'invalid mongo id';
+    }
+
+    if (typeof data.text != 'string') {
+        errors['text'] = 'message text must be a string';
+    }
+    if (data.text.length === 0) {
+        errors['text'] = 'message text cannot be empty';
+    }
+
+    if (errors) {
+        return resCb({
+            status: 422,
+            statusText: 'Unprocessable Content',
+            errors: errors,
+        });
+    }
+
+    const cleanId = sanitize(data._id);
+
     try {
         const updatedMessage = await Message.findByIdAndUpdate(
-            data._id,
+            cleanId,
             { text: data.text },
             {
                 returnDocument: 'after',
@@ -181,8 +205,22 @@ const onSocketEditMessage = async (io, socket, roomId, data, resCb) => {
 };
 
 const onSocketDeleteMessage = async (io, socket, roomId, data, resCb) => {
+    let errors = null;
+    if (!mongoose.isObjectIdOrHexString(roomId)) {
+        errors['id'] = 'invalid mongo id';
+    }
+
+    if (errors) {
+        return resCb({
+            status: 422,
+            statusText: 'Unprocessable Content',
+            errors: errors,
+        });
+    }
+
+    const cleanId = sanitize(data._id);
     try {
-        const deleteMessage = await Message.findByIdAndDelete(data._id);
+        const deleteMessage = await Message.findByIdAndDelete(cleanId);
         socket.to(roomId).emit('delete', deleteMessage);
         resCb({
             status: 200,
