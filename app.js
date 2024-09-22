@@ -16,8 +16,8 @@ const app = express();
 
 main().catch((e) => console.error('Connecting to database error: ' + e));
 const db = mongoose.connection;
-db.on('error', () => console.error('db connection failed'));
-
+db.on('error', (error) => console.error('error on db:' + error));
+db.on('connect', () => console.log('db connected'));
 const corsOptions = {
     origin: 'https://serene-babka-69b0e2.netlify.app',
     optionSuccessStatus: 200,
