@@ -107,7 +107,79 @@ const getMessages = [
     },
 ];
 
+const onSocketMessage = async (io, socket, roomId, text, resCb) => {
+    const { user } = socket.request;
+    try {
+        const message = await new Message({
+            chatId: roomId,
+            text: text,
+            user: user._id,
+        }).save();
+
+        await message.populate('user');
+        socket.to(roomId).emit('message', message);
+        // After everything is successful send the message back
+        resCb({
+            status: 201,
+            statusText: 'created',
+            message: message,
+        });
+    } catch (e) {
+        resCb({
+            status: 500,
+            statusText: 'bad request',
+        });
+        console.error(e);
+    }
+};
+
+const onSocketEditMessage = async (io, socket, roomId, data, resCb) => {
+    try {
+        const updatedMessage = await Message.findByIdAndUpdate(
+            data._id,
+            { text: data.text },
+            {
+                returnDocument: 'after',
+            }
+        ).populate('user');
+        // Maybe not need this populate because I
+        // can pass the user from the original here
+        socket.to(roomId).emit('edit', updatedMessage);
+        resCb({
+            status: 200,
+            statusText: 'ok',
+            message: updatedMessage,
+        });
+    } catch (error) {
+        resCb({
+            status: 500,
+            statusText: 'bad request',
+        });
+        console.error(error);
+    }
+};
+
+const onSocketDeleteMessage = async (io, socket, roomId, data, resCb) => {
+    try {
+        const deleteMessage = await Message.findByIdAndDelete(data._id);
+        socket.to(roomId).emit('delete', deleteMessage);
+        resCb({
+            status: 200,
+            statusText: 'ok',
+        });
+    } catch (error) {
+        resCb({
+            status: 500,
+            statusText: 'bad request',
+        });
+        console.error(error);
+    }
+};
+
 export default {
     createMessage,
     getMessages,
+    onSocketMessage,
+    onSocketEditMessage,
+    onSocketDeleteMessage,
 };
