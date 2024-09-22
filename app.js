@@ -7,11 +7,10 @@ import {
 } from './routes/index.js';
 import { mongoose, mongo } from 'mongoose';
 import cors from 'cors';
-import { configDotenv } from 'dotenv';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import mongoSanitize from 'express-mongo-sanitize';
-configDotenv();
+import config from './config.js';
 import { initializeSocket } from './socket.js';
 const app = express();
 
@@ -26,7 +25,7 @@ const corsOptions = {
 app.use(cookieParser());
 app.use(
     cors({
-        origin: process.env.APP_URL,
+        origin: config.APP_URL,
         optionsSuccessStatus: 200,
         credentials: true,
     })
@@ -75,10 +74,10 @@ app.use((err, req, res, next) => {
     });
 });
 async function main() {
-    await mongoose.connect(process.env.DB_URL);
+    await mongoose.connect(config.DB_URL);
 }
 
 const server = initializeSocket(app);
-server.listen(process.env.PORT, () =>
-    console.log('Server started in port 3000')
+server.listen(config.PORT, () =>
+    console.log('Server started at: ' + config.URL)
 );
