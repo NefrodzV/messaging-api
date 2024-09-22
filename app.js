@@ -15,9 +15,9 @@ configDotenv();
 import { initializeSocket } from './socket.js';
 const app = express();
 
-main().catch((e) => console.log('Connecting to database error: ' + e));
+main().catch((e) => console.error('Connecting to database error: ' + e));
 const db = mongoose.connection;
-db.on('error', () => console.log('db connection failed'));
+db.on('error', () => console.error('db connection failed'));
 
 const corsOptions = {
     origin: 'https://serene-babka-69b0e2.netlify.app',
