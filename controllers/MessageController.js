@@ -1,9 +1,10 @@
-import { validateHeaders } from './index.js';
+import { sendErrors, validateHeaders } from './index.js';
 import { Chat, Message } from '../models/index.js';
 import jwt from 'jsonwebtoken';
 import { body, validationResult, matchedData, query } from 'express-validator';
 import mongoose from 'mongoose';
 import sanitize from 'mongo-sanitize';
+import config from '../config.js';
 
 const createMessage = [
     validateHeaders(),
@@ -18,27 +19,11 @@ const createMessage = [
         .bail()
         .isLength({ max: 500 })
         .withMessage('Maximum of 500 characters'),
-
+    sendErrors,
     async (req, res, next) => {
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            const mappedResult = result.mapped();
-            const errors = {};
-            for (const key of Object.keys(mappedResult)) {
-                errors[`${key}`] = mappedResult[`${key}`].msg;
-            }
-            res.status(403).json({
-                errors: errors,
-            });
-            return;
-        }
-
         try {
             const data = matchedData(req);
-            const decode = jwt.verify(
-                data.authorization,
-                process.env.TOKEN_SECRET
-            );
+            const decode = jwt.verify(data.jwt, config.TOKEN_SECRET);
 
             const message = await Message.create({
                 chatId: data.chatId,
@@ -65,26 +50,11 @@ const getMessages = [
         .isMongoId()
         .withMessage('Invalid mongo id format')
         .escape(),
+    sendErrors,
     async (req, res, next) => {
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            const mappedResult = result.mapped();
-            const errors = {};
-            for (const key of Object.keys(mappedResult)) {
-                errors[`${key}`] = mappedResult[`${key}`].msg;
-            }
-            res.status(403).json({
-                errors: errors,
-            });
-            return;
-        }
-
         try {
             const data = matchedData(req);
-            const decode = jwt.decode(
-                data.authorization,
-                process.env.TOKEN_SECRET
-            );
+            const decode = jwt.decode(data.jwt, config.TOKEN_SECRET);
 
             const id = mongoose.Types.ObjectId.createFromHexString(decode.id);
 

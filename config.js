@@ -1,3 +1,5 @@
+import { configDotenv } from 'dotenv';
+configDotenv();
 export default {
     URL: process.env.URL || 'http://localhost:3000',
     PORT: process.env.PORT || 3000,
