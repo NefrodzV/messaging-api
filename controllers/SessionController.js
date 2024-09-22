@@ -2,8 +2,8 @@ import { User } from '../models/index.js';
 import { validationResult, body } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { configDotenv } from 'dotenv';
-configDotenv();
+import { sendErrors } from './index.js';
+import config from '../config.js';
 
 const signup = [
     body('username', 'Username cannot be empty')
@@ -36,18 +36,8 @@ const signup = [
         })
         .escape(),
 
+    sendErrors,
     async (req, res, next) => {
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            const mappedResult = result.mapped();
-            const errors = {};
-            for (const key of Object.keys(mappedResult)) {
-                errors[`${key}`] = mappedResult[`${key}`].msg;
-            }
-            res.status(422).json({ errors: errors });
-            return;
-        }
-
         try {
             const encryptedPassword = await bcrypt.hash(req.body.password, 10);
             const user = new User({
@@ -59,7 +49,7 @@ const signup = [
             await user.save();
             return res
                 .status(201)
-                .json({ msg: 'Account created successfully' });
+                .json({ message: 'Account created successfully' });
         } catch (e) {
             next(e);
         }
@@ -77,28 +67,15 @@ const login = [
         .trim()
         .isLength({ min: 8 })
         .escape(),
-
+    sendErrors,
     async (req, res) => {
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            const mappedResult = result.mapped();
-            const errors = {};
-            for (const key of Object.keys(mappedResult)) {
-                errors[`${key}`] = mappedResult[`${key}`].msg;
-            }
-            res.status(422).json({
-                errors: errors,
-            });
-            return;
-        }
-
         try {
             const user = await User.findOne({ email: req.body.email });
             // User doesnt exist in db
             if (!user) {
                 res.status(400).json({
                     errors: {
-                        auth: 'Incorrect username or password',
+                        auth: 'Authentication failed',
                     },
                 });
                 return;
@@ -112,7 +89,7 @@ const login = [
             if (!correctPassword) {
                 res.status(400).json({
                     errors: {
-                        auth: 'Incorrect username or password',
+                        auth: 'Authentication failed',
                     },
                 });
                 return;
@@ -123,11 +100,9 @@ const login = [
                 username: user.username,
             };
 
-            jwt.sign(payload, process.env.TOKEN_SECRET, (err, token) => {
+            jwt.sign(payload, config.TOKEN_SECRET, (err, token) => {
                 if (err) {
-                    return res.status(500).json({
-                        msg: 'Something went wrong with the server',
-                    });
+                    throw new Error(err);
                 }
 
                 const formattedToken = 'Bearer ' + token;
@@ -153,9 +128,8 @@ const login = [
             });
         } catch (e) {
             res.status(500).json({
-                msg: 'Uh Oh! Something went wrong',
+                message: e.message,
             });
-            console.error(e);
         }
     },
 ];
