@@ -10,6 +10,7 @@ import cors from 'cors';
 import { configDotenv } from 'dotenv';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
+import mongoSanitize from 'express-mongo-sanitize';
 configDotenv();
 import { initializeSocket } from './socket.js';
 const app = express();
@@ -32,6 +33,7 @@ app.use(
 );
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.use(mongoSanitize());
 
 // TODO: Erase or leave this depending if its needed
 app.get('/', (req, res) => {
