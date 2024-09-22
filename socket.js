@@ -41,7 +41,7 @@ export function initializeSocket(app) {
 
         const user = await User.findById(decode.id, { password: 0 });
         if (!user) {
-            const error = new Error('Forbidden');
+            const error = new Error('forbidden');
             return next(error);
         }
 
@@ -87,6 +87,12 @@ export function initializeSocket(app) {
             await message.populate('user');
 
             io.to(roomId).emit('message', message);
+        });
+
+        socket.on('leave', (roomId) => {
+            console.log('user leaving a room');
+            console.log(roomId);
+            socket.leave(roomId);
         });
     });
 
