@@ -109,6 +109,27 @@ const getMessages = [
 
 const onSocketMessage = async (io, socket, roomId, text, resCb) => {
     const { user } = socket.request;
+    let errors = null;
+    // Check if room id is valid
+    if (!mongoose.isObjectIdOrHexString(roomId)) {
+        errors['id'] = 'invalid mongo db id';
+    }
+
+    if (typeof text != 'string') {
+        errors['text'] = 'message text must be a string';
+    }
+    if (text.length === 0) {
+        errors['text'] = 'message text cannot be empty';
+    }
+
+    if (errors) {
+        return resCb({
+            status: 422,
+            statusText: 'Unprocessable Content',
+            errors: errors,
+        });
+    }
+
     try {
         const message = await new Message({
             chatId: roomId,
