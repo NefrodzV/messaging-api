@@ -2,7 +2,7 @@ export { default as UserController } from './UserController.js';
 export { default as SessionController } from './SessionController.js';
 export { default as ChatController } from './ChatController.js';
 export { default as MessageController } from './MessageController.js';
-import { cookie } from 'express-validator';
+import { cookie, validationResult } from 'express-validator';
 
 function validateHeaders() {
     return cookie('jwt', 'Requires authorization')
@@ -20,4 +20,29 @@ function validateHeaders() {
         .escape();
 }
 
-export { validateHeaders };
+function sendErrors(req, res, next) {
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+        const mappedResult = result.mapped();
+        console.log(mappedResult);
+        const errors = {};
+        if (Object.hasOwn(mappedResult, 'jwt')) {
+            console.log('has a jwt error');
+            errors['jwt'] = mappedResult['jwt'].msg;
+            return res.status(403).json({
+                errors,
+            });
+        } else {
+            for (const key of Object.keys(mappedResult)) {
+                errors[`${key}`] = mappedResult[`${key}`].msg;
+            }
+        }
+        return res.status(403).json({
+            errors: errors,
+        });
+    }
+    console.log(errors);
+    next();
+}
+
+export { validateHeaders, sendErrors };
