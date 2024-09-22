@@ -16,7 +16,7 @@ function validateHeaders() {
             return token;
         })
         .isJWT()
-        .withMessage('Forbidden')
+        .withMessage('Unauthorized')
         .escape();
 }
 
