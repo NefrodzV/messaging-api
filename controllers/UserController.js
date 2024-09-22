@@ -1,37 +1,23 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/index.js';
-import { validateHeaders } from './index.js';
+import { sendErrors, validateHeaders } from './index.js';
 import { validationResult, matchedData, body } from 'express-validator';
-import { configDotenv } from 'dotenv';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
 import mongoose from 'mongoose';
+import config from '../config.js';
 const upload = multer();
-configDotenv();
 
 // Returns the auth user
 const getUser = [
     // Validating and Sanitizing
     validateHeaders(),
+    sendErrors,
     async (req, res, next) => {
         // Processing the token data
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            const mappedResult = result.mapped();
-            const errors = {};
-            for (const key of Object.keys(mappedResult)) {
-                errors[`${key}`] = mappedResult[`${key}`].msg;
-            }
-            res.status(403).json({
-                errors: errors,
-            });
-            return;
-        }
-
         try {
             const data = matchedData(req);
-
-            const decode = jwt.verify(data.jwt, process.env.TOKEN_SECRET);
+            const decode = jwt.verify(data.jwt, config.TOKEN_SECRET);
 
             const userAggregation = await User.aggregate([
                 {
@@ -111,7 +97,7 @@ const getUser = [
                 user: userAggregation[0],
             });
         } catch (e) {
-            next(e);
+            console.log(e);
         }
     },
 ];
@@ -119,23 +105,11 @@ const getUser = [
 // Should returns all users except the user in session
 const getUsers = [
     validateHeaders(),
+    sendErrors,
     async (req, res, next) => {
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            const mappedResult = result.mapped();
-            const errors = {};
-            for (const key of Object.keys(mappedResult)) {
-                errors[`${key}`] = mappedResult[`${key}`].msg;
-            }
-            res.status(403).json({
-                errors: errors,
-            });
-            return;
-        }
-
         try {
             const data = matchedData(req);
-            const decode = jwt.verify(data.jwt, process.env.TOKEN_SECRET);
+            const decode = jwt.verify(data.jwt, config.TOKEN_SECRET);
 
             const users = await User.find(
                 {
@@ -176,24 +150,13 @@ const changePassword = [
             return input === req.body.newPassword;
         })
         .escape(),
-
+    sendErrors,
     async (req, res, next) => {
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            const mappedResult = result.mapped();
-            const errors = {};
-            for (const key of Object.keys(mappedResult)) {
-                errors[`${key}`] = mappedResult[`${key}`].msg;
-            }
-            res.status(422).json({ errors: errors });
-            return;
-        }
-
         try {
             const requestData = matchedData(req);
             const tokenData = jwt.verify(
                 requestData.authorization,
-                process.env.TOKEN_SECRET
+                config.TOKEN_SECRET
             );
 
             const user = await User.findById(tokenData.id);
@@ -246,25 +209,11 @@ const uploadProfileImage = [
             return req.file !== undefined;
         })
         .bail(),
-
+    sendErrors,
     async (req, res, next) => {
-        const result = validationResult(req);
-        if (!result.isEmpty()) {
-            const mappedResult = result.mapped();
-            const errors = {};
-            for (const key of Object.keys(mappedResult)) {
-                errors[`${key}`] = mappedResult[`${key}`].msg;
-            }
-            console.log(errors);
-            res.status(422).json({ errors: errors });
-            return;
-        }
         try {
-            const reqData = matchedData(req);
-            const dataToken = jwt.verify(
-                reqData.authorization,
-                process.env.TOKEN_SECRET
-            );
+            const data = matchedData(req);
+            const dataToken = jwt.verify(data.jwt, config.TOKEN_SECRET);
 
             const user = await User.findById(dataToken.id);
             if (!user) {
@@ -276,9 +225,6 @@ const uploadProfileImage = [
             }
 
             const image = req.file;
-            // console.log('Image of uploaded profile image')
-            // console.log(image)
-            // console.log(image.buffer)
             user.image = {
                 name: image.originalname,
                 mimeType: image.mimetype,
