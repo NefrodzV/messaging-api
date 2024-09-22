@@ -1,13 +1,8 @@
-import UserController from './UserController.js';
-import SessionController from './SessionController.js';
-import ChatController from './ChatController.js';
-import MessageController from './MessageController.js';
+export { default as UserController } from './UserController.js';
+export { default as SessionController } from './SessionController.js';
+export { default as ChatController } from './ChatController.js';
+export { default as MessageController } from './MessageController.js';
 import { cookie } from 'express-validator';
-
-const userController = UserController();
-const sessionController = SessionController();
-const chatController = ChatController();
-const messageController = MessageController();
 
 function validateHeaders() {
     return cookie('jwt', 'Requires authorization')
@@ -25,10 +20,4 @@ function validateHeaders() {
         .escape();
 }
 
-export {
-    userController,
-    sessionController,
-    chatController,
-    messageController,
-    validateHeaders,
-};
+export { validateHeaders };
