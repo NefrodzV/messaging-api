@@ -35,9 +35,9 @@ app.use(express.json());
 app.use(mongoSanitize());
 
 // TODO: Erase or leave this depending if its needed
-app.get('/', (req, res) => {
-    res.status(200).json({ msg: 'Messaging api working' });
-});
+app.get('/', (req, res) =>
+    res.status(200).json({ msg: 'Messaging api working' })
+);
 app.use('/session', SessionRouter);
 app.use('/users', UserRouter);
 app.use('/chats', ChatRouter);
@@ -46,31 +46,22 @@ app.use('/messages', MessageRouter);
 // Error handling globally
 app.use((err, req, res, next) => {
     if (err instanceof mongo.MongoServerError) {
-        console.log('Mongo server error is true');
-        console.error('Mongo error: ' + err);
         if (err.code === 11000) {
-            res.status(409).json({
+            return res.status(409).json({
                 errors: {
                     email: 'Email is already in use',
                 },
             });
-
-            return;
         }
     }
 
     if (err instanceof jwt.JsonWebTokenError) {
-        res.status(403).json({
-            errors: {
-                authorization: 'Forbidden',
-            },
-        });
-        return;
+        return res.sendStatus(403);
     }
 
     // Any unhandled error
     res.status(500).json({
-        message: 'Something went wrong with the server',
+        message: err.message,
     });
 });
 async function main() {
