@@ -46,6 +46,7 @@ const getUser = [
                                 as: 'chat',
                                 in: {
                                     _id: '$$chat._id',
+                                    lastMessage: '$$chat.lastMessage',
                                     users: {
                                         $filter: {
                                             input: '$$chat.users',
@@ -76,6 +77,7 @@ const getUser = [
                                 as: 'chat',
                                 in: {
                                     _id: '$$chat._id',
+                                    lastMessage: '$$chat.lastMessage',
                                     user: { $first: '$$chat.users' },
                                 },
                             },
@@ -87,6 +89,12 @@ const getUser = [
             await User.populate(userAggregation, {
                 path: 'chats.user',
                 select: '-_id -password -email',
+            });
+
+            await User.populate(userAggregation, {
+                path: 'chats.lastMessage',
+                model: 'Message',
+                populate: { path: 'user', select: '-_id -password -email' },
             });
             // console.log('user agregation');
             // console.log(userAggregation[0].chats);
