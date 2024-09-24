@@ -49,10 +49,7 @@ export function initializeSocket(app) {
     io.on('connection', (socket) => {
         // Join the authorized user to a room to send messages to him
         const user = socket.request.user;
-        socket.join(user._id);
-        socket.on('join', (roomId) => {
-            socket.join(roomId);
-        });
+        socket.join(user._id.toString());
 
         socket.on('edit', async (roomId, data, resCb) => {
             MessageController.onSocketEditMessage(
@@ -75,7 +72,16 @@ export function initializeSocket(app) {
         });
 
         socket.on('message', async (roomId, text, resCb) => {
-            MessageController.onSocketMessage(io, socket, roomId, text, resCb);
+            await MessageController.onSocketMessage(
+                io,
+                socket,
+                roomId,
+                text,
+                resCb
+            );
+        });
+        socket.on('join', (roomId) => {
+            socket.join(roomId);
         });
 
         socket.on('leave', (roomId) => {
