@@ -88,8 +88,8 @@ const getUser = [
                 path: 'chats.user',
                 select: '-_id -password -email',
             });
-            console.log('user agregation');
-            console.log(userAggregation[0].chats);
+            // console.log('user agregation');
+            // console.log(userAggregation[0].chats);
 
             // TODO: ADD THE CHAT LIST OF THIS USER HERE
             res.status(200).json({
