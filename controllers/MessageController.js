@@ -1,4 +1,4 @@
-import { sendErrors, validateHeaders } from './index.js';
+import { ChatController, sendErrors, validateHeaders } from './index.js';
 import { Chat, Message } from '../models/index.js';
 import jwt from 'jsonwebtoken';
 import { body, validationResult, matchedData, query } from 'express-validator';
@@ -110,6 +110,18 @@ const onSocketMessage = async (io, socket, roomId, text, resCb) => {
 
         await message.populate('user');
         socket.to(roomId).emit('message', message);
+        // Updating the chat last message field
+        const chat = await Chat.findByIdAndUpdate(
+            {
+                _id: roomId,
+            },
+            { lastMessage: message._id }
+        );
+
+        const users = chat.users;
+        users.forEach((user) =>
+            io.to(user.toString()).emit('lastMessage', message)
+        );
         // After everything is successful send the message back
         resCb({
             status: 201,
