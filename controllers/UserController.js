@@ -94,7 +94,10 @@ const getUser = [
             await User.populate(userAggregation, {
                 path: 'chats.lastMessage',
                 model: 'Message',
-                populate: { path: 'user', select: '-_id -password -email' },
+                populate: {
+                    path: 'user',
+                    select: '-_id -password -email -image',
+                },
             });
             // console.log('user agregation');
             // console.log(userAggregation[0].chats);
