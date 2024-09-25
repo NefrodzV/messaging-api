@@ -7,7 +7,13 @@ const userSchema = new Schema({
     password: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     lastChat: { type: mongoose.SchemaTypes.ObjectId },
-    image: String,
+    // Profile image
+    image: {
+        original: String,
+        w56: String,
+        w72: String,
+        w150: String,
+    },
 });
 
 const User = mongoose.model('User', userSchema);
