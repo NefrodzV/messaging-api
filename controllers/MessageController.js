@@ -102,8 +102,9 @@ const onSocketMessage = async (io, socket, roomId, text, resCb) => {
     }
 
     try {
+        const cleanId = sanitize(roomId);
         const message = await new Message({
-            chatId: roomId,
+            chatId: cleanId,
             text: text,
             user: user._id,
         }).save();
@@ -113,7 +114,7 @@ const onSocketMessage = async (io, socket, roomId, text, resCb) => {
         // Updating the chat last message field
         const chat = await Chat.findByIdAndUpdate(
             {
-                _id: roomId,
+                _id: cleanId,
             },
             { lastMessage: message._id }
         );
@@ -160,7 +161,7 @@ const onSocketEditMessage = async (io, socket, roomId, data, resCb) => {
     }
 
     const cleanId = sanitize(data._id);
-
+    const cleanRoomId = sanitize(roomId);
     try {
         const updatedMessage = await Message.findByIdAndUpdate(
             cleanId,
@@ -172,6 +173,14 @@ const onSocketEditMessage = async (io, socket, roomId, data, resCb) => {
         // Maybe not need this populate because I
         // can pass the user from the original here
         socket.to(roomId).emit('edit', updatedMessage);
+        const chat = await Chat.findById(cleanRoomId);
+        // Check if the updated message is the last one and send update to ui
+        if (chat.lastMessage.toString() == updatedMessage._id.toString()) {
+            chat.users.forEach((user) => {
+                io.to(user.toString()).emit('lastMessage', updatedMessage);
+            });
+        }
+        console.log(updatedMessage);
         resCb({
             status: 200,
             statusText: 'ok',
