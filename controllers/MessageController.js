@@ -180,7 +180,6 @@ const onSocketEditMessage = async (io, socket, roomId, data, resCb) => {
                 io.to(user.toString()).emit('lastMessage', updatedMessage);
             });
         }
-        console.log(updatedMessage);
         resCb({
             status: 200,
             statusText: 'ok',
@@ -210,9 +209,30 @@ const onSocketDeleteMessage = async (io, socket, roomId, data, resCb) => {
     }
 
     const cleanId = sanitize(data._id);
+    const cleanRoomId = sanitize(roomId);
     try {
         const deleteMessage = await Message.findByIdAndDelete(cleanId);
         socket.to(roomId).emit('delete', deleteMessage);
+        const chat = await Chat.findById(cleanRoomId);
+        // Check if the message is the last one
+        if (deleteMessage._id.toString() == chat.lastMessage.toString()) {
+            // Get the last message and send a ui update to users
+            const lastMessage = await Message.findOne({
+                chatId: cleanRoomId,
+            })
+                .sort({ _id: -1 })
+                .limit(1)
+                .populate('user');
+            console.log(lastMessage);
+            // send an update to each user
+            chat.users.forEach((user) =>
+                io.to(user.toString()).emit('lastMessage', lastMessage)
+            );
+
+            // saving the new last message
+            chat.lastMessage = lastMessage._id;
+            await chat.save();
+        }
         resCb({
             status: 200,
             statusText: 'ok',
