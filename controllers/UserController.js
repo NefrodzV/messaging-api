@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import multer from 'multer';
 import mongoose from 'mongoose';
 import config from '../config.js';
+import { v2 as cloudinary } from 'cloudinary';
 const upload = multer();
 
 // Returns the auth user
@@ -236,10 +237,45 @@ const uploadProfileImage = [
             }
 
             const image = req.file;
+            const buffer = Buffer.from(image.buffer, image.encoding);
+            const uploadResult = await new Promise((resolve) => {
+                cloudinary.uploader
+                    .upload_stream(
+                        {
+                            public_id: user._id.toString(),
+                            overwrite: true,
+                        },
+                        (error, uploadResult) => {
+                            if (error) console.error(error);
+                            return resolve(uploadResult);
+                        }
+                    )
+                    .end(buffer);
+            });
+            console.log(uploadResult);
+            console.log('transforming image');
+            // Needs to be with the public id of the image
+            // Widths: 56, 72, 150
+            const url56 = cloudinary.url(uploadResult.public_id, {
+                width: 56,
+                height: 56,
+            });
+
+            const url72 = cloudinary.url(uploadResult.public_id, {
+                width: 72,
+                height: 72,
+            });
+
+            const url150 = cloudinary.url(uploadResult.public_id, {
+                width: 150,
+                height: 150,
+            });
+
             user.image = {
-                name: image.originalname,
-                mimeType: image.mimetype,
-                binData: image.buffer,
+                original: uploadResult.url,
+                w56: url56,
+                w72: url72,
+                w150: url150,
             };
 
             await user.save();
@@ -248,6 +284,7 @@ const uploadProfileImage = [
                 message: 'image uploaded',
             });
         } catch (e) {
+            console.log(e);
             next(e);
         }
     },
