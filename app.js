@@ -12,8 +12,13 @@ import cookieParser from 'cookie-parser';
 import mongoSanitize from 'express-mongo-sanitize';
 import config from './config.js';
 import { initializeSocket } from './socket.js';
+import { v2 as cloudinary } from 'cloudinary';
 const app = express();
-
+// init cloudinary
+cloudinary.config({
+    secure: true,
+});
+// Log the configuration
 main().catch((e) => console.error('Connecting to database error: ' + e));
 const db = mongoose.connection;
 db.on('error', (error) => console.error('error on db:' + error));
