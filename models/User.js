@@ -9,6 +9,7 @@ const userSchema = new Schema({
     lastChat: { type: mongoose.SchemaTypes.ObjectId },
     // Profile image
     image: {
+        cloudinary_public_id: String,
         original: String,
         w56: String,
         w72: String,
