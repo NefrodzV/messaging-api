@@ -225,25 +225,15 @@ const uploadProfileImage = [
     async (req, res, next) => {
         try {
             const data = matchedData(req);
-            const dataToken = jwt.verify(data.jwt, config.TOKEN_SECRET);
+            const payload = jwt.verify(data.jwt, config.TOKEN_SECRET);
 
-            const user = await User.findById(dataToken.id);
-            if (!user) {
-                return res.status(409).json({
-                    errors: {
-                        database: 'Couldnt find user in database',
-                    },
-                });
-            }
-
-            const image = req.file;
-            const buffer = Buffer.from(image.buffer, image.encoding);
+            const file = req.file;
+            const buffer = Buffer.from(file.buffer, file.encoding);
             const uploadResult = await new Promise((resolve) => {
                 cloudinary.uploader
                     .upload_stream(
                         {
-                            public_id: user._id.toString(),
-                            overwrite: true,
+                            folder: 'messaging_app',
                         },
                         (error, uploadResult) => {
                             if (error) console.error(error);
@@ -271,7 +261,20 @@ const uploadProfileImage = [
                 height: 150,
             });
 
+            const user = await User.findById(payload.id);
+
+            // If there is a previous clodinary id
+            if (user.image.cloudinary_public_id) {
+                await cloudinary.uploader.destroy(
+                    user.image.cloudinary_public_id,
+                    {
+                        invalidate: true,
+                    }
+                );
+            }
+
             user.image = {
+                cloudinary_public_id: uploadResult.public_id,
                 original: uploadResult.url,
                 w56: url56,
                 w72: url72,
@@ -282,6 +285,7 @@ const uploadProfileImage = [
 
             return res.status(200).json({
                 message: 'image uploaded',
+                image: user.image,
             });
         } catch (e) {
             console.log(e);
