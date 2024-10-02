@@ -7,7 +7,7 @@ const messageSchema = new Schema({
     user: { type: Schema.Types.ObjectId, ref: 'User' },
     date: { type: Date, default: Date.now },
     text: { type: String, max: 500 },
-    images: [{ type: String }],
+    images: [{ cloudinary_public_id: { type: String }, url: { type: String } }],
 });
 
 const Message = mongoose.model('Message', messageSchema);
