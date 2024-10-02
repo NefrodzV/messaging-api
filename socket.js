@@ -28,6 +28,7 @@ export function initializeSocket(app) {
             origin: 'http://localhost:5173',
             credentials: true,
         },
+        maxHttpBufferSize: 1e8,
     });
 
     io.use(async (socket, next) => {
@@ -71,7 +72,10 @@ export function initializeSocket(app) {
             );
         });
 
-        socket.on('message', async (roomId, text, resCb) => {
+        socket.on('message', async (roomId, message, resCb) => {
+            console.log('images sent');
+            console.log(message);
+            return;
             await MessageController.onSocketMessage(
                 io,
                 socket,
