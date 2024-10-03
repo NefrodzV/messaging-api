@@ -5,6 +5,7 @@ import { body, validationResult, matchedData, query } from 'express-validator';
 import mongoose from 'mongoose';
 import sanitize from 'mongo-sanitize';
 import config from '../config.js';
+import { v2 as cloudinary } from 'cloudinary';
 
 const createMessage = [
     validateHeaders(),
@@ -24,7 +25,7 @@ const createMessage = [
         try {
             const data = matchedData(req);
             const decode = jwt.verify(data.jwt, config.TOKEN_SECRET);
-
+            return res.json({ data });
             const message = await Message.create({
                 chatId: data.chatId,
                 user: decode.id,
@@ -78,7 +79,7 @@ const getMessages = [
     },
 ];
 
-const onSocketMessage = async (io, socket, roomId, text, resCb) => {
+const onSocketMessage = async (io, socket, roomId, data, resCb) => {
     const { user } = socket.request;
     let errors = null;
     // Check if room id is valid
@@ -86,10 +87,10 @@ const onSocketMessage = async (io, socket, roomId, text, resCb) => {
         errors['id'] = 'invalid mongo id';
     }
 
-    if (typeof text != 'string') {
+    if (typeof data.text != 'string') {
         errors['text'] = 'message text must be a string';
     }
-    if (text.length === 0) {
+    if (data.text.length === 0) {
         errors['text'] = 'message text cannot be empty';
     }
 
@@ -102,11 +103,47 @@ const onSocketMessage = async (io, socket, roomId, text, resCb) => {
     }
 
     try {
+        async function createImageInCloudinary(imageBuffer) {
+            try {
+                const result = await new Promise((resolve) => {
+                    cloudinary.uploader
+                        .upload_stream(
+                            {
+                                folder: 'messaging_app',
+                            },
+                            (error, uploadResult) => {
+                                if (error) console.error(error);
+                                return resolve(uploadResult);
+                            }
+                        )
+                        .end(imageBuffer);
+                });
+                const url = cloudinary.url(result.public_id, {
+                    width: 250,
+                    height: 250,
+                });
+                return {
+                    cloudinary_public_id: result.public_id,
+                    url: url,
+                };
+            } catch (e) {
+                console.error(e);
+                return null;
+            }
+        }
+        const imagePromises = data.images.map((imageBuffer) =>
+            createImageInCloudinary(imageBuffer)
+        );
+
+        const images = await Promise.all(imagePromises);
+        console.log('sent to cloudinary');
+        console.log(images);
         const cleanId = sanitize(roomId);
         const message = await new Message({
             chatId: cleanId,
-            text: text,
+            text: data.text,
             user: user._id,
+            images: images,
         }).save();
 
         await message.populate('user');

@@ -73,14 +73,11 @@ export function initializeSocket(app) {
         });
 
         socket.on('message', async (roomId, message, resCb) => {
-            console.log('images sent');
-            console.log(message);
-            return;
             await MessageController.onSocketMessage(
                 io,
                 socket,
                 roomId,
-                text,
+                message,
                 resCb
             );
         });
