@@ -131,13 +131,13 @@ const onSocketMessage = async (io, socket, roomId, data, resCb) => {
                 return null;
             }
         }
-        const imagePromises = data.images.map((imageBuffer) =>
+        const imagePromises = data?.images?.map((imageBuffer) =>
             createImageInCloudinary(imageBuffer)
         );
 
-        const images = await Promise.all(imagePromises);
-        console.log('sent to cloudinary');
-        console.log(images);
+        const images = imagePromises
+            ? await Promise.all(imagePromises)
+            : undefined;
         const cleanId = sanitize(roomId);
         const message = await new Message({
             chatId: cleanId,
@@ -260,15 +260,26 @@ const onSocketDeleteMessage = async (io, socket, roomId, data, resCb) => {
                 .sort({ _id: -1 })
                 .limit(1)
                 .populate('user');
+            console.log('lastMesssagge');
             console.log(lastMessage);
             // send an update to each user
             chat.users.forEach((user) =>
-                io.to(user.toString()).emit('lastMessage', lastMessage)
+                io.to(user.toString()).emit(
+                    'lastMessage',
+                    lastMessage
+                        ? lastMessage
+                        : {
+                              chatId: roomId,
+                              text: null,
+                          }
+                )
             );
 
-            // saving the new last message
-            chat.lastMessage = lastMessage._id;
-            await chat.save();
+            // saving the new last message if its not null
+            if (lastMessage) {
+                chat.lastMessage = lastMessage._id;
+                await chat.save();
+            }
         }
         resCb({
             status: 200,
