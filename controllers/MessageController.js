@@ -103,34 +103,6 @@ const onSocketMessage = async (io, socket, roomId, data, resCb) => {
     }
 
     try {
-        async function createImageInCloudinary(imageBuffer) {
-            try {
-                const result = await new Promise((resolve) => {
-                    cloudinary.uploader
-                        .upload_stream(
-                            {
-                                folder: 'messaging_app',
-                            },
-                            (error, uploadResult) => {
-                                if (error) console.error(error);
-                                return resolve(uploadResult);
-                            }
-                        )
-                        .end(imageBuffer);
-                });
-                const url = cloudinary.url(result.public_id, {
-                    width: 250,
-                    height: 250,
-                });
-                return {
-                    cloudinary_public_id: result.public_id,
-                    url: url,
-                };
-            } catch (e) {
-                console.error(e);
-                return null;
-            }
-        }
         const imagePromises = data?.images?.map((imageBuffer) =>
             createImageInCloudinary(imageBuffer)
         );
@@ -200,13 +172,25 @@ const onSocketEditMessage = async (io, socket, roomId, data, resCb) => {
     const cleanId = sanitize(data._id);
     const cleanRoomId = sanitize(roomId);
     try {
-        const updatedMessage = await Message.findByIdAndUpdate(
-            cleanId,
-            { text: data.text },
-            {
-                returnDocument: 'after',
-            }
-        ).populate('user');
+        const imageFilePromises = data?.imageFiles?.map((file) =>
+            createImageInCloudinary(file)
+        );
+
+        const savedImages = await Promise.all(imageFilePromises);
+
+        console.log('images');
+        console.log(data.images);
+        console.log(savedImages);
+        console.log('images in array');
+        console.log([...data.images, ...savedImages]);
+        // This returns the old message doc after the update
+        const oldMessage = await Message.findByIdAndUpdate(cleanId, {
+            text: data.text,
+            images: [...savedImages, ...(data?.images ?? [])],
+        });
+
+        console.log('updating message with images');
+        const updatedMessage = await Message.findById(cleanId).populate('user');
         // Maybe not need this populate because I
         // can pass the user from the original here
         socket.to(roomId).emit('edit', updatedMessage);
@@ -217,6 +201,25 @@ const onSocketEditMessage = async (io, socket, roomId, data, resCb) => {
                 io.to(user.toString()).emit('lastMessage', updatedMessage);
             });
         }
+
+        // removing images in cloudinary that were deleted
+        const deletePromises = updatedMessage.images.map((image) => {
+            const foundMatch = oldMessage.images.find(
+                (oldImage) =>
+                    oldImage.cloudinary_public_id != image.cloudinary_public_id
+            );
+
+            if (foundMatch !== undefined) {
+                return cloudinary.uploader.destroy(
+                    foundMatch.cloudinary_public_id,
+                    {
+                        invalidate: true,
+                    }
+                );
+            }
+        });
+
+        await Promise.all(deletePromises);
         resCb({
             status: 200,
             statusText: 'ok',
@@ -294,6 +297,34 @@ const onSocketDeleteMessage = async (io, socket, roomId, data, resCb) => {
     }
 };
 
+async function createImageInCloudinary(imageBuffer) {
+    try {
+        const result = await new Promise((resolve) => {
+            cloudinary.uploader
+                .upload_stream(
+                    {
+                        folder: 'messaging_app',
+                    },
+                    (error, uploadResult) => {
+                        if (error) console.error(error);
+                        return resolve(uploadResult);
+                    }
+                )
+                .end(imageBuffer);
+        });
+        const url = cloudinary.url(result.public_id, {
+            width: 250,
+            height: 250,
+        });
+        return {
+            cloudinary_public_id: result.public_id,
+            url: url,
+        };
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
 export default {
     createMessage,
     getMessages,
