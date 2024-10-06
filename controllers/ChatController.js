@@ -106,12 +106,21 @@ const createChat = [
             });
 
             await chat.save();
+            await chat.populate('users', 'username _id image');
 
+            console.log(chat);
             return res.status(201).json({
                 message: 'chat created successfully',
                 chatId: chat._id,
+                chat: {
+                    _id: chat._id,
+                    user: chat.users.filter(
+                        (user) => user._id.toString() != decode.id.toString()
+                    )[0],
+                },
             });
         } catch (e) {
+            console.log(e);
             next(e);
         }
     },
