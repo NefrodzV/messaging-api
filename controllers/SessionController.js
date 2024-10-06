@@ -134,7 +134,18 @@ const login = [
     },
 ];
 
+const signout = (req, res, next) => {
+    res.clearCookie('jwt', {
+        httpOnly: true,
+        secure: true,
+        sameSite: true,
+    });
+
+    res.sendStatus(200);
+};
+
 export default {
     signup,
     login,
+    signout,
 };
