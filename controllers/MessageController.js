@@ -118,7 +118,7 @@ const onSocketMessage = async (io, socket, roomId, data, resCb) => {
             images: images,
         }).save();
 
-        await message.populate('user');
+        await message.populate('user', '-password');
         socket.to(roomId).emit('message', message);
         // Updating the chat last message field
         const chat = await Chat.findByIdAndUpdate(
@@ -178,18 +178,12 @@ const onSocketEditMessage = async (io, socket, roomId, data, resCb) => {
 
         const savedImages = await Promise.all(imageFilePromises);
 
-        console.log('images');
-        console.log(data.images);
-        console.log(savedImages);
-        console.log('images in array');
-        console.log([...data.images, ...savedImages]);
         // This returns the old message doc after the update
         const oldMessage = await Message.findByIdAndUpdate(cleanId, {
             text: data.text,
             images: [...savedImages, ...(data?.images ?? [])],
         });
 
-        console.log('updating message with images');
         const updatedMessage = await Message.findById(cleanId).populate('user');
         // Maybe not need this populate because I
         // can pass the user from the original here
