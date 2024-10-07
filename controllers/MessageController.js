@@ -103,19 +103,11 @@ const onSocketMessage = async (io, socket, roomId, data, resCb) => {
     }
 
     try {
-        const imagePromises = data?.images?.map((imageBuffer) =>
-            createImageInCloudinary(imageBuffer)
-        );
-
-        const images = imagePromises
-            ? await Promise.all(imagePromises)
-            : undefined;
         const cleanId = sanitize(roomId);
         const message = await new Message({
             chatId: cleanId,
             text: data.text,
             user: user._id,
-            images: images,
         }).save();
 
         await message.populate('user', '-password');
@@ -137,6 +129,22 @@ const onSocketMessage = async (io, socket, roomId, data, resCb) => {
             status: 201,
             statusText: 'created',
             message: message,
+        });
+
+        io.to(cleanId).emit('image', {
+            messageId: message._id,
+            totalLoadingImages: data?.images.length,
+        });
+        const imagePromises = data?.images?.map((imageBuffer) =>
+            createImageInCloudinary(imageBuffer, message._id, io, cleanId)
+        );
+
+        const images = imagePromises
+            ? await Promise.all(imagePromises)
+            : undefined;
+        console.log('imags created in cloud', images);
+        await Message.findByIdAndUpdate(message._id, {
+            images: images,
         });
     } catch (e) {
         resCb({
@@ -173,7 +181,7 @@ const onSocketEditMessage = async (io, socket, roomId, data, resCb) => {
     const cleanRoomId = sanitize(roomId);
     try {
         const imageFilePromises = data?.imageFiles?.map((file) =>
-            createImageInCloudinary(file)
+            createImageInCloudinary(file, imageCb)
         );
 
         const savedImages = await Promise.all(imageFilePromises);
@@ -291,7 +299,7 @@ const onSocketDeleteMessage = async (io, socket, roomId, data, resCb) => {
     }
 };
 
-async function createImageInCloudinary(imageBuffer) {
+async function createImageInCloudinary(imageBuffer, messageId, io, roomId) {
     try {
         const result = await new Promise((resolve) => {
             cloudinary.uploader
@@ -310,6 +318,16 @@ async function createImageInCloudinary(imageBuffer) {
             width: 250,
             height: 250,
         });
+        // Sending the image updates back to the user
+
+        io.in(roomId).emit('image', {
+            messageId,
+            image: {
+                cloudinary_public_id: result.public_id,
+                url: url,
+            },
+        });
+
         return {
             cloudinary_public_id: result.public_id,
             url: url,
