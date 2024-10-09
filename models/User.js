@@ -1,21 +1,22 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const Schema = mongoose.Schema
+const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
-    profile: {
-        username: { type: String, required: true },
-        password: { type: String, required:true },
-        email: { type: String, required:true, unique: true },
-        image: { 
-            name: String, 
-            mimeType: String, 
-            binData: Buffer
-        }
+    username: { type: String, required: true },
+    password: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    lastChat: { type: mongoose.SchemaTypes.ObjectId },
+    // Profile image
+    image: {
+        cloudinary_public_id: String,
+        original: String,
+        w56: String,
+        w72: String,
+        w150: String,
     },
-    chats: [{ type: Schema.Types.ObjectId, ref: "Chat" }]
-})
+});
 
-const User = mongoose.model('User', userSchema)
+const User = mongoose.model('User', userSchema);
 
-export default User
+export default User;

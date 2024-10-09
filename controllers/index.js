@@ -1,33 +1,47 @@
-import UserController from "./UserController.js";
-import SessionController from "./SessionController.js";
-import ChatController from "./ChatController.js";
-import MessageController from "./MessageController.js";
-import { header } from 'express-validator'
-
-const userController = UserController()
-const sessionController = SessionController()
-const chatController = ChatController()
-const messageController = MessageController()
+export { default as UserController } from './UserController.js';
+export { default as SessionController } from './SessionController.js';
+export { default as ChatController } from './ChatController.js';
+export { default as MessageController } from './MessageController.js';
+import { cookie, validationResult } from 'express-validator';
 
 function validateHeaders() {
-    return header('authorization', 'Requires authorization')
-    .exists({ values: 'falsy' })
-    .bail()
-    .contains('Bearer ')
-    .withMessage('Authorization doesnt contain Bearer')
-    .customSanitizer(input => {
-        const authHeader = input.split(' ')
-        const token = authHeader[1]
-        return token
-    })
-    .isJWT()
-    .withMessage('Forbidden')
-    .escape()
+    return cookie('jwt', 'Requires authorization')
+        .exists({ values: 'falsy' })
+        .bail()
+        .contains('Bearer ')
+        .withMessage('Authorization doesnt contain Bearer')
+        .customSanitizer((input) => {
+            const authHeader = input.split(' ');
+            const token = authHeader[1];
+            return token;
+        })
+        .isJWT()
+        .withMessage('Unauthorized')
+        .escape();
 }
 
-export { 
-    userController, 
-    sessionController, 
-    chatController,
-    messageController,
-    validateHeaders }
+function sendErrors(req, res, next) {
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+        const mappedResult = result.mapped();
+        console.log(mappedResult);
+        const errors = {};
+        // If error is an authorization error
+        if (Object.hasOwn(mappedResult, 'jwt')) {
+            errors['jwt'] = mappedResult['jwt'].msg;
+            return res.status(403).json({
+                errors,
+            });
+        } else {
+            for (const key of Object.keys(mappedResult)) {
+                errors[`${key}`] = mappedResult[`${key}`].msg;
+            }
+        }
+        return res.status(422).json({
+            errors: errors,
+        });
+    }
+    next();
+}
+
+export { validateHeaders, sendErrors };

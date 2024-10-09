@@ -1,14 +1,15 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const Schema = mongoose.Schema
-// TODO: make support for images
+const Schema = mongoose.Schema;
+
 const messageSchema = new Schema({
-    chatId: { type: Schema.Types.ObjectId, required:true },
-    user: { type: Schema.Types.ObjectId, ref: "User" },
+    chatId: { type: Schema.Types.ObjectId, required: true },
+    user: { type: Schema.Types.ObjectId, ref: 'User' },
     date: { type: Date, default: Date.now },
-    text: { type: String , max: 500 },
-})
+    text: { type: String, max: 500 },
+    images: [{ cloudinary_public_id: { type: String }, url: { type: String } }],
+});
 
-const Message = mongoose.model('Message', messageSchema)
+const Message = mongoose.model('Message', messageSchema);
 
-export default Message
+export default Message;

@@ -1,12 +1,12 @@
-import { Router } from "express";
-import {chatController} from "../controllers/index.js";
+import { Router } from 'express';
+import { ChatController } from '../controllers/index.js';
 
-const router  = new Router()
+const router = new Router();
 
-router.get('/', chatController.getChats)
+router.get('/', ChatController.getChats);
 
-router.post('/', chatController.createChat)
+router.post('/', ChatController.createChat);
 
-router.get('/:chatId', chatController.getChat)
+router.get('/:chatId', ChatController.getChat);
 
-export default router
+export default router;

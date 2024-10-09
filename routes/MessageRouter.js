@@ -1,11 +1,10 @@
-import { Router } from "express";
-import { messageController } from '../controllers/index.js'
+import { Router } from 'express';
+import { MessageController } from '../controllers/index.js';
 
-const router = new Router()
+const router = new Router();
 
-router.get('/', messageController.getMessages)
+router.get('/', MessageController.getMessages);
 
-router.post('/', messageController.createMessage)
+router.post('/', MessageController.createMessage);
 
-export default router
-
+export default router;

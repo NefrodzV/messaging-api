@@ -1,217 +1,212 @@
-import jwt from 'jsonwebtoken'
-import { Chat, Message } from '../models/index.js'
-import { 
-    body,  
-    validationResult , 
-    matchedData, 
+import jwt from 'jsonwebtoken';
+import { Chat, Message } from '../models/index.js';
+import {
+    body,
+    validationResult,
+    matchedData,
     param,
-    query} from 'express-validator'
-import { configDotenv } from 'dotenv'
-import { validateHeaders } from './index.js'
-import mongoose from 'mongoose'
-configDotenv()
+    query,
+} from 'express-validator';
+import { configDotenv } from 'dotenv';
+import { sendErrors, validateHeaders } from './index.js';
+import mongoose from 'mongoose';
+import config from '../config.js';
+configDotenv();
 
-function ChatController() {
-    const getChats = [
-        validateHeaders(),
-        // Getting a chat with another user with id
-        query('userId')
-            .optional()
-            .trim()
-            .isMongoId()
-            .withMessage('Invalid id format')
-            .escape(),
-        async(req, res , next) => {
-            const result = validationResult(req)
-            if(!result.isEmpty()) {
-                const mappedResult = result.mapped()
-                const errors = {}
-                for(const key of Object.keys(mappedResult)) {
-                    errors[`${key}`] = mappedResult[`${key}`].msg
-                }
-                res.status(403).json({
-                    errors: errors
-                })
-            }
-            try {
-                const data = matchedData(req)
-                const decode = jwt.verify(
-                    data.authorization,
-                    process.env.TOKEN_SECRET
-                )
+const getChats = [
+    validateHeaders(),
+    sendErrors,
+    async (req, res, next) => {
+        try {
+            const data = matchedData(req);
+            const decode = jwt.verify(data.authorization, config.TOKEN_SECRET);
 
-                if(data.userId) {
-                    // Look up chat with the other user with his id
-                    const chat = await Chat.findOne({
-                        users: { $all: [data.userId, decode.id]}
-                    },{
+            if (data.userId) {
+                // Look up chat with the other user with his id
+                const chat = await Chat.findOne(
+                    {
+                        users: { $all: [data.userId, decode.id] },
+                    },
+                    {
                         _id: 1,
                         users: 1,
-                        messages: 1
-                    }).populate('users').populate('messages')
+                        messages: 1,
+                    }
+                )
+                    .populate('users')
+                    .populate('messages');
+                // If nothing was found
+                if (!chat)
+                    return res.status(409).json({
+                        message:
+                            'Another chat with this user could not be found',
+                    });
 
-                    // If nothing was found
-                    if(!chat) return res.status(409).json({
-                        message: "Another chat with this user could not be found"
-                    })
+                return res.status(200).json({
+                    message: 'Chat with this user found',
+                    chat: chat,
+                });
+            }
 
-                    return res.status(200).json({
-                        message: "Chat with this user found",
-                        chat: chat
-                    })
-                }
-
-                const chats = await Chat.find({
-                    users: decode.id
-                }, {
+            const chats = await Chat.find(
+                {
+                    users: decode.id,
+                },
+                {
                     // Returns the first user that is not with the specified id
-                    users: { $elemMatch: { $ne: decode.id }},
-                    lastMessage: 1
-                }).populate('lastMessage').populate("users")
-
-                
-                res.status(200).json({
-                    chats: chats
-                })
-            } catch(e) {
-                next(e)
-            }
-        }
-
-        
-    ]
-
-    const createChat = [
-        validateHeaders(),
-        // Represents the other user to send
-        body('userId', 'Specify id of other user')
-            .exists({ values: 'falsy' })
-            .bail()
-            .isMongoId()
-            .withMessage("userId must be a mongo id")
-            .escape(),
-        body('message', 'Require message to create chat')
-            .exists({ values: 'falsy'})
-            .bail()
-            .trim()
-            .escape(),
-        async(req, res, next) => {
-            const result = validationResult(req)
-            if(!result.isEmpty()) {
-                const mappedResult = result.mapped()
-                const errors = {}
-                for(const key of Object.keys(mappedResult)) {
-                    errors[`${key}`] = mappedResult[`${key}`].msg
+                    users: { $elemMatch: { $ne: decode.id } },
+                    lastMessage: 1,
                 }
-                res.status(403).json({
-                    errors: errors
-                })
-                return
-            }
+            )
+                .populate('lastMessage')
+                .populate('users');
 
-            try {
-
-                const data = matchedData(req)
-                const decode = jwt.verify(
-                    data.authorization,
-                    process.env.TOKEN_SECRET
-                )
-
-                // Find a chat that the two users have initiated
-                const message = new Message({
-                    text: data.message,
-                    user: decode.id
-                },)
-
-                const chat = new Chat({
-                    users: [data.userId, decode.id],
-                    lastMessage: message._id,
-                    messages: [message._id]
-                })
-
-                message.chatId = chat._id
-                
-                await Promise.all([
-                    await chat.save(),
-                    await message.save()
-                ])
-                const id = mongoose.Types.ObjectId.createFromHexString(decode.id)
-                const savedMessage = await Message.findById(message._id, {
-                    myself: { $eq: ["$user", id]}, 
-                    text: 1,
-                    date: 1,
-                })
-                res.status(201).json({
-                    messages:[savedMessage],
-                    chatId: chat._id
-                })  
-            } catch(e) {
-                next(e)
-            }
+            res.status(200).json({
+                chats: chats,
+            });
+        } catch (e) {
+            next(e);
         }
-    ]
+    },
+];
 
-    const getChat = [
-        validateHeaders(),
-        param('chatId', "Require chat id")
-            .exists({ values: 'falsy'})
-            .bail()
-            .isMongoId()
-            .withMessage('Invalid id format')
-            .escape(),
+const createChat = [
+    validateHeaders(),
+    // Represents the other user to send
+    body('userId', 'Specify id of other user')
+        .exists({ values: 'falsy' })
+        .bail()
+        .isMongoId()
+        .withMessage('userId must be a mongo id')
+        .escape(),
+    // body('message', 'Require message to create chat')
+    //     .exists({ values: 'falsy' })
+    //     .bail()
+    //     .trim()
+    //     .escape(),
+    sendErrors,
+    async (req, res, next) => {
+        try {
+            const data = matchedData(req);
+            const decode = jwt.verify(data.jwt, config.TOKEN_SECRET);
 
-        async(req, res, next) => {
-            const result = validationResult(req)
-            if(!result.isEmpty()) {
-                const mappedResult = result.mapped()
-                const errors = {}
-                for(const key of Object.keys(mappedResult)) {
-                    errors[`${key}`] = mappedResult[`${key}`].msg
-                }
-                res.status(403).json({
-                    errors: errors
-                })
+            // Finding a chat if its already with these users
+            const existingChat = await Chat.findOne({
+                users: [data.userId, decode.id],
+            });
+            if (existingChat) {
+                return res.status(200).json({
+                    message: 'chat with these users already exist',
+                    chatId: existingChat._id,
+                });
             }
 
-            try {
-                const data = matchedData(req)
-                const decode = jwt.verify(
-                    data.authorization,
-                    process.env.TOKEN_SECRET
-                )
+            const chat = new Chat({
+                users: [data.userId, decode.id],
+            });
 
-                const chat = await Chat.findById(data.chatId, {
-                    users: { $elemMatch: { $ne: decode.id }},
-                    
-                }).populate('users')
+            await chat.save();
+            await chat.populate('users', 'username _id image');
 
-                const id = mongoose.Types.ObjectId.createFromHexString(decode.id)
-                const messages = await Message.find({
-                    chatId: data.chatId
-                },{
-                    myself: { $eq: ["$user", id]},
-                    date: 1,
-                    text:1
-                })
-                
-                console.log("Messags of chat")
-                console.log(messages)
-
-                res.status(200).json({
-                    user: chat.users[0],
-                    messages
-                })
-            } catch(e) {
-                next(e)
-            }
+            console.log(chat);
+            return res.status(201).json({
+                message: 'chat created successfully',
+                chatId: chat._id,
+                chat: {
+                    _id: chat._id,
+                    user: chat.users.filter(
+                        (user) => user._id.toString() != decode.id.toString()
+                    )[0],
+                },
+            });
+        } catch (e) {
+            console.log(e);
+            next(e);
         }
-    ]
+    },
+];
 
-    return {
-        getChat,
-        getChats,
-        createChat
-    }
-}
+const getChat = [
+    validateHeaders(),
+    param('chatId', 'Require chat id')
+        .exists({ values: 'falsy' })
+        .bail()
+        .isMongoId()
+        .withMessage('Invalid id format')
+        .escape(),
 
-export default ChatController
+    sendErrors,
+    async (req, res, next) => {
+        try {
+            const data = matchedData(req);
+            const decode = jwt.verify(data.jwt, config.TOKEN_SECRET);
+
+            const chatAggregation = await Chat.aggregate([
+                {
+                    $match: {
+                        _id: mongoose.Types.ObjectId.createFromHexString(
+                            data.chatId
+                        ),
+                    },
+                },
+                {
+                    $lookup: {
+                        from: 'messages',
+                        localField: '_id',
+                        foreignField: 'chatId',
+                        as: 'messages',
+                    },
+                },
+                {
+                    $project: {
+                        messages: 1,
+                        users: {
+                            $filter: {
+                                input: '$users',
+                                as: 'user',
+                                cond: {
+                                    $ne: [
+                                        '$$user',
+                                        mongoose.Types.ObjectId.createFromHexString(
+                                            decode.id
+                                        ),
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                },
+                {
+                    $project: {
+                        messages: 1,
+                        user: { $arrayElemAt: ['$users', 0] },
+                    },
+                },
+            ]);
+
+            await Chat.populate(chatAggregation, {
+                path: 'user',
+                model: 'User',
+                select: 'username image',
+            });
+
+            await Chat.populate(chatAggregation, {
+                path: 'messages.user',
+                model: 'User',
+                select: '-password',
+            });
+            return res.status(200).json({
+                message: 'Chat found with id',
+                chat: chatAggregation[0],
+            });
+        } catch (e) {
+            next(e);
+        }
+    },
+];
+
+export default {
+    getChats,
+    getChat,
+    createChat,
+};
