@@ -133,7 +133,7 @@ const onSocketMessage = async (io, socket, roomId, data, resCb) => {
 
         io.to(cleanId).emit('image', {
             messageId: message._id,
-            totalLoadingImages: data?.images.length,
+            totalLoadingImages: data?.images?.length ?? 0,
         });
         const imagePromises = data?.images?.map((imageBuffer) =>
             createImageInCloudinary(imageBuffer, message._id, io, cleanId)
