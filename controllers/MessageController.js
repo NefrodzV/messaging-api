@@ -180,40 +180,32 @@ const onSocketEditMessage = async (io, socket, roomId, data, resCb) => {
     const cleanId = sanitize(data._id);
     const cleanRoomId = sanitize(roomId);
     try {
-        const imageFilePromises = data?.imageFiles?.map((file) =>
-            createImageInCloudinary(file, imageCb)
-        );
-
-        const savedImages = await Promise.all(imageFilePromises);
-
         // This returns the old message doc after the update
         const oldMessage = await Message.findByIdAndUpdate(cleanId, {
-            text: data.text,
-            images: [...savedImages, ...(data?.images ?? [])],
+            text: data?.text,
+            images: data?.images,
         });
 
         const updatedMessage = await Message.findById(cleanId).populate('user');
         // Maybe not need this populate because I
         // can pass the user from the original here
         socket.to(roomId).emit('edit', updatedMessage);
-        const chat = await Chat.findById(cleanRoomId);
-        // Check if the updated message is the last one and send update to ui
-        if (chat.lastMessage.toString() == updatedMessage._id.toString()) {
-            chat.users.forEach((user) => {
-                io.to(user.toString()).emit('lastMessage', updatedMessage);
-            });
-        }
+        resCb({
+            status: 200,
+            statusText: 'ok',
+            message: updatedMessage,
+        });
 
         // removing images in cloudinary that were deleted
-        const deletePromises = updatedMessage.images.map((image) => {
-            const foundMatch = oldMessage.images.find(
-                (oldImage) =>
-                    oldImage.cloudinary_public_id != image.cloudinary_public_id
+        const deletePromises = oldMessage.images.map((oldImage) => {
+            const foundMatch = updatedMessage.images.find(
+                (image) =>
+                    image.cloudinary_public_id === oldImage.cloudinary_public_id
             );
 
-            if (foundMatch !== undefined) {
+            if (!foundMatch) {
                 return cloudinary.uploader.destroy(
-                    foundMatch.cloudinary_public_id,
+                    oldImage.cloudinary_public_id,
                     {
                         invalidate: true,
                     }
@@ -222,11 +214,32 @@ const onSocketEditMessage = async (io, socket, roomId, data, resCb) => {
         });
 
         await Promise.all(deletePromises);
-        resCb({
-            status: 200,
-            statusText: 'ok',
-            message: updatedMessage,
+        io.to(cleanRoomId).emit('image', {
+            messageId: updatedMessage._id,
+            totalLoadingImages: data?.imageFiles.length,
+            images: data?.images,
         });
+        // Check if there is a need to process images to cloud
+        if (data?.imageFiles?.length === 0) return;
+
+        const imageFilePromises = data?.imageFiles?.map((file) =>
+            createImageInCloudinary(file, updatedMessage._id, io, cleanRoomId)
+        );
+
+        const savedImages = await Promise.all(imageFilePromises);
+
+        await Message.findByIdAndUpdate(cleanId, {
+            images: [...updatedMessage.images, ...savedImages],
+        });
+
+        // Updating again the messages
+        const chat = await Chat.findById(cleanRoomId);
+        // Check if the updated message is the last one and send update to ui
+        if (chat.lastMessage.toString() == updatedMessage._id.toString()) {
+            chat.users.forEach((user) => {
+                io.to(user.toString()).emit('lastMessage', updatedMessage);
+            });
+        }
     } catch (error) {
         resCb({
             status: 500,
