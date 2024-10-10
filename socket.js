@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import cookie from 'cookie';
 import { configDotenv } from 'dotenv';
 import User from './models/User.js';
-import { MessageController } from './controllers/index.js';
+import { MessageController, UserController } from './controllers/index.js';
 
 configDotenv();
 export function initializeSocket(app) {
@@ -82,6 +82,7 @@ export function initializeSocket(app) {
             );
         });
         socket.on('join', (roomId) => {
+            UserController.onUserJoinRoom(socket, roomId);
             socket.join(roomId);
         });
 

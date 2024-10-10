@@ -5,6 +5,7 @@ import { validationResult, matchedData, body } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
 import mongoose from 'mongoose';
+import sanitize from 'mongo-sanitize';
 import config from '../config.js';
 import { v2 as cloudinary } from 'cloudinary';
 const upload = multer();
@@ -41,6 +42,7 @@ const getUser = [
                         username: 1,
                         image: 1,
                         email: 1,
+                        lastChat: 1,
                         chats: {
                             $map: {
                                 input: '$chats',
@@ -72,6 +74,7 @@ const getUser = [
                         username: 1,
                         image: 1,
                         email: 1,
+                        lastChat: 1,
                         chats: {
                             $map: {
                                 input: '$chats',
@@ -294,9 +297,22 @@ const uploadProfileImage = [
     },
 ];
 
+const onUserJoinRoom = async (socket, roomId) => {
+    try {
+        const cleanChatId = sanitize(roomId);
+        const user = await User.findByIdAndUpdate(socket.request.user._id, {
+            lastChat: cleanChatId,
+        });
+
+        console.log('user updated with last chat', user);
+    } catch (e) {
+        console.error(e);
+    }
+};
 export default {
     getUser,
     getUsers,
     changePassword,
     uploadProfileImage,
+    onUserJoinRoom,
 };
