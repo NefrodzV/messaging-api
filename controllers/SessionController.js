@@ -116,6 +116,7 @@ const login = [
                     httpOnly: true,
                     secure: true,
                     sameSite: 'Strict',
+                    domain: config.APP_URL,
                 });
 
                 return res.status(200).json({
