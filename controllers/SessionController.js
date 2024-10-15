@@ -138,7 +138,7 @@ const signout = (req, res, next) => {
     res.clearCookie('jwt', {
         httpOnly: true,
         secure: true,
-        sameSite: true,
+        sameSite: 'None',
     });
 
     res.sendStatus(200);
