@@ -115,7 +115,7 @@ const login = [
                     expires: cookieExpiration,
                     httpOnly: true,
                     secure: true,
-                    sameSite: true,
+                    sameSite: 'None',
                 });
 
                 return res.status(200).json({
