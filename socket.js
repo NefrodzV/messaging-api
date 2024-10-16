@@ -2,11 +2,10 @@ import { Server } from 'socket.io';
 import { createServer } from 'node:http';
 import jwt from 'jsonwebtoken';
 import cookie from 'cookie';
-import { configDotenv } from 'dotenv';
 import User from './models/User.js';
 import { MessageController, UserController } from './controllers/index.js';
+import config from './config.js';
 
-configDotenv();
 export function initializeSocket(app) {
     async function checkAuthorization(socket) {
         const cookies = cookie.parse(socket.request.headers.cookie);
@@ -25,7 +24,7 @@ export function initializeSocket(app) {
     const server = new createServer(app);
     const io = new Server(server, {
         cors: {
-            origin: 'http://localhost:5173',
+            origin: config.APP_URL,
             credentials: true,
         },
         maxHttpBufferSize: 1e8,
