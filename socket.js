@@ -24,7 +24,7 @@ export function initializeSocket(app) {
     const server = new createServer(app);
     const io = new Server(server, {
         cors: {
-            origin: config.APP_URL,
+            origin: 'https://serene-babka-69b0e2.netlify.app',
             credentials: true,
         },
         maxHttpBufferSize: 1e8,
