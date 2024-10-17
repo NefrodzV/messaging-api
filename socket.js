@@ -26,6 +26,7 @@ export function initializeSocket(app) {
         cors: {
             origin: 'https://serene-babka-69b0e2.netlify.app',
             credentials: true,
+            methods: ['GET', 'POST'],
         },
         maxHttpBufferSize: 1e8,
     });
