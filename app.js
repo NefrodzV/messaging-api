@@ -30,7 +30,7 @@ const corsOptions = {
 app.use(cookieParser());
 app.use(
     cors({
-        origin: config.APP_URL,
+        origin: 'https://serene-babka-69b0e2.netlify.app',
         optionsSuccessStatus: 200,
         credentials: true,
     })
