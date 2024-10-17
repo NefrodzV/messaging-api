@@ -14,6 +14,13 @@ import config from './config.js';
 import { initializeSocket } from './socket.js';
 import { v2 as cloudinary } from 'cloudinary';
 const app = express();
+app.use(
+    cors({
+        origin: 'https://serene-babka-69b0e2.netlify.app',
+        optionsSuccessStatus: 200,
+        credentials: true,
+    })
+);
 // init cloudinary
 cloudinary.config({
     secure: true,
@@ -28,13 +35,6 @@ const corsOptions = {
     optionSuccessStatus: 200,
 };
 app.use(cookieParser());
-app.use(
-    cors({
-        origin: 'https://serene-babka-69b0e2.netlify.app',
-        optionsSuccessStatus: 200,
-        credentials: true,
-    })
-);
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(mongoSanitize());
