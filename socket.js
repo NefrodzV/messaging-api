@@ -28,7 +28,7 @@ export function initializeSocket(app) {
             credentials: true,
             methods: ['GET', 'POST'],
         },
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'],
         maxHttpBufferSize: 1e8,
     });
 
