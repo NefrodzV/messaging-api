@@ -89,6 +89,17 @@ export function initializeSocket(app) {
         socket.on('leave', (roomId) => {
             socket.leave(roomId);
         });
+
+        socket.on('disconnect', (reason) => {
+            console.log('A disconnection happened : ', reason);
+        });
+
+        socket.on('disconnecting', (reason) => {
+            console.log(
+                'A socket is disconnecting but its room are :',
+                socket.rooms
+            );
+        });
     });
 
     return server;
