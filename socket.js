@@ -92,6 +92,7 @@ export function initializeSocket(app) {
 
         socket.on('disconnect', (reason) => {
             console.log('A disconnection happened : ', reason);
+            console.log('The user disconnected is:', user);
         });
 
         socket.on('disconnecting', (reason) => {
@@ -99,6 +100,8 @@ export function initializeSocket(app) {
                 'A socket is disconnecting but its room are :',
                 socket.rooms
             );
+
+            console.log('The user disconnecting is:', user);
         });
     });
 
